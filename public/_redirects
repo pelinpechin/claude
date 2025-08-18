@@ -1,5 +1,2 @@
-# Disable Netlify Service Worker
-/cnm-sw.js /404.html 404
-
-# SPA redirects
+# SPA redirects only
 /*    /index.html   200
