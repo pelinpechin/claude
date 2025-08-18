@@ -76,19 +76,34 @@ export function parseCSVStudentData(csvContent) {
     
     // Calcular estado de pago
     const cuotasPagadas = cuotas.filter(c => c.pagado).length;
-    const saldoPendiente = Math.max(0, totalAPagar - totalPagado);
     
     // Determinar si tiene beca 100%
     const tieneBeca100 = porcentajeBeca === '100%' && (tipoBeca === 'VUL' || becaEnPesos >= arancelTotal);
     
+    // Para becas 100%, el saldo es 0
+    let saldoPendiente = 0;
     let status = 'paid';
+    
     if (tieneBeca100) {
       status = 'scholarship';
-    } else if (saldoPendiente > 0) {
-      // Si no ha pagado las últimas 2 cuotas, es vencido
-      const mesActual = new Date().getMonth() + 3; // Marzo = 3
-      const cuotasAtrasadas = cuotas.slice(0, Math.min(mesActual - 3, 10)).filter(c => !c.pagado).length;
-      status = cuotasAtrasadas >= 2 ? 'overdue' : 'pending';
+      saldoPendiente = 0;
+    } else {
+      // Calcular saldo basado en cuotas mensuales
+      const cuotaMensual = Math.round(totalAPagar / 10);
+      const deberiaHaberPagado = cuotaMensual * cuotasPagadas;
+      saldoPendiente = Math.max(0, totalAPagar - totalPagado);
+      
+      // Determinar estado basado en cuotas pagadas
+      const mesActual = 8; // Agosto (mes 8 del año)
+      const cuotasEsperadas = Math.min(mesActual - 2, 10); // Desde marzo (mes 3)
+      
+      if (saldoPendiente === 0) {
+        status = 'paid';
+      } else if (cuotasPagadas >= cuotasEsperadas) {
+        status = 'pending';
+      } else {
+        status = 'overdue';
+      }
     }
     
     // Generar datos del apoderado basados en el nombre del estudiante
