@@ -5,7 +5,30 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# SPA routing only
+# Disable Netlify features that might interfere
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+# Headers to prevent caching issues
+[[headers]]
+  for = "/cnm-sw.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+# SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
