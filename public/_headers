@@ -1,0 +1,11 @@
+# Headers for CSV files
+/Libro2.csv
+  Content-Type: text/csv; charset=utf-8
+  Cache-Control: public, max-age=3600
+
+# Headers for all files
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
