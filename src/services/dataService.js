@@ -303,18 +303,32 @@ class DataService {
     }
   }
 
-  // Cargar datos desde CSV
+  // Cargar datos desde CSV e integrarlos en la base de datos
   async loadCSVData() {
     try {
-      const students = await csvService.loadCSVData();
-      if (students.length > 0) {
+      const csvStudents = await csvService.loadCSVData();
+      
+      if (csvStudents.length > 0) {
+        // Integrar estudiantes del CSV en la base de datos por curso
+        csvStudents.forEach(student => {
+          try {
+            // Intentar agregar el estudiante si no existe ya
+            this.addStudent(student.grade, student);
+          } catch (error) {
+            // El estudiante ya existe, simplemente continuar
+            console.log(`Estudiante ${student.studentName} ya existe en ${student.grade}`);
+          }
+        });
+        
         this.notify({
           type: 'CSV_LOADED',
-          studentsCount: students.length,
+          studentsCount: csvStudents.length,
           timestamp: new Date().toISOString()
         });
+        
+        console.log(`Integrados ${csvStudents.length} estudiantes del CSV en la base de datos`);
       }
-      return students;
+      return csvStudents;
     } catch (error) {
       console.error('Error cargando datos CSV:', error);
       return [];

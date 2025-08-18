@@ -22,13 +22,26 @@ const TreasuryDashboard = () => {
   const [allCourses, setAllCourses] = useState([]);
 
   useEffect(() => {
-    // Cargar datos iniciales
-    setAllStudents(dataService.getAllStudents());
-    setAllCourses(dataService.getAllCourses());
+    // Cargar datos CSV embebidos al inicio
+    const loadInitialData = async () => {
+      try {
+        await dataService.loadCSVData();
+        console.log('Datos CSV cargados exitosamente');
+      } catch (error) {
+        console.error('Error cargando datos CSV:', error);
+      }
+      
+      // Cargar datos iniciales
+      setAllStudents(dataService.getAllStudents());
+      setAllCourses(dataService.getAllCourses());
+    };
+
+    loadInitialData();
 
     // Suscribirse a cambios
     const unsubscribe = dataService.subscribe(() => {
       setAllStudents(dataService.getAllStudents());
+      setAllCourses(dataService.getAllCourses());
     });
 
     return unsubscribe;
