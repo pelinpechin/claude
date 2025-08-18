@@ -29213,3 +29213,29 @@ export const exportUpdatedData = () => {
     courseStats: getAllCourses().map(grade => getGradeStats(grade)).filter(Boolean)
   };
 };
+
+// Función para importar estudiantes desde CSV
+export const importCSVStudents = (csvStudentsByGrade) => {
+  try {
+    console.log('Importando estudiantes del CSV a la base de datos...');
+    
+    // Limpiar datos existentes y agregar los nuevos
+    Object.keys(csvStudentsByGrade).forEach(grade => {
+      // Crear el curso si no existe
+      if (!studentsByGrade[grade]) {
+        studentsByGrade[grade] = [];
+      }
+      
+      // Reemplazar estudiantes existentes del curso con los del CSV
+      studentsByGrade[grade] = [...csvStudentsByGrade[grade]];
+      
+      console.log(`Curso ${grade}: ${csvStudentsByGrade[grade].length} estudiantes importados`);
+    });
+    
+    console.log(`Importación completada. Total de cursos: ${Object.keys(csvStudentsByGrade).length}`);
+    return true;
+  } catch (error) {
+    console.error('Error importando estudiantes del CSV:', error);
+    return false;
+  }
+};

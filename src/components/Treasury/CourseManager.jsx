@@ -72,15 +72,22 @@ const CourseManager = ({ onStudentSelect, onDeleteStudent }) => {
   };
 
   const organizedCourses = courses.reduce((acc, course) => {
-    if (course.includes('Kinder') || course.includes('Pre-Kinder')) {
+    if (course.includes('NT1')) {
       acc.Parvulos = acc.Parvulos || [];
       acc.Parvulos.push(course);
-    } else if (course.includes('Básico')) {
+    } else if (course.includes('NT2')) {
+      acc.Parvulos = acc.Parvulos || [];
+      acc.Parvulos.push(course);
+    } else if (course.includes('BASICO') || course.includes('BÁSICO') || course.includes('Básico')) {
       acc.Basica = acc.Basica || [];
       acc.Basica.push(course);
-    } else if (course.includes('Medio')) {
+    } else if (course.includes('MEDIO') || course.includes('Medio')) {
       acc.Media = acc.Media || [];
       acc.Media.push(course);
+    } else {
+      // Otros cursos que no encajen en las categorías principales
+      acc.Otros = acc.Otros || [];
+      acc.Otros.push(course);
     }
     return acc;
   }, {});
@@ -113,8 +120,12 @@ const CourseManager = ({ onStudentSelect, onDeleteStudent }) => {
         >
           <option value="">Seleccionar curso</option>
           {Object.entries(organizedCourses).map(([level, levelCourses]) => (
-            <optgroup key={level} label={level === 'Basica' ? 'Educación Básica' : 
-                                         level === 'Media' ? 'Educación Media' : 'Parvulos'}>
+            <optgroup key={level} label={
+              level === 'Basica' ? 'Educación Básica' : 
+              level === 'Media' ? 'Educación Media' : 
+              level === 'Parvulos' ? 'Educación Parvularia (NT1, NT2)' :
+              'Otros Cursos'
+            }>
               {levelCourses.map(course => (
                 <option key={course} value={course}>{course}</option>
               ))}

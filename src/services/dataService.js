@@ -309,24 +309,29 @@ class DataService {
       const csvStudents = await csvService.loadCSVData();
       
       if (csvStudents.length > 0) {
-        // Integrar estudiantes del CSV en la base de datos por curso
+        // Organizar estudiantes por curso
+        const studentsByGrade = {};
         csvStudents.forEach(student => {
-          try {
-            // Intentar agregar el estudiante si no existe ya
-            this.addStudent(student.grade, student);
-          } catch (error) {
-            // El estudiante ya existe, simplemente continuar
-            console.log(`Estudiante ${student.studentName} ya existe en ${student.grade}`);
+          if (!studentsByGrade[student.grade]) {
+            studentsByGrade[student.grade] = [];
           }
+          studentsByGrade[student.grade].push(student);
         });
+        
+        // Importar directamente a la base de datos
+        const { importCSVStudents } = await import('../data/realDatabase.js');
+        if (importCSVStudents) {
+          importCSVStudents(studentsByGrade);
+        }
         
         this.notify({
           type: 'CSV_LOADED',
           studentsCount: csvStudents.length,
+          coursesCount: Object.keys(studentsByGrade).length,
           timestamp: new Date().toISOString()
         });
         
-        console.log(`Integrados ${csvStudents.length} estudiantes del CSV en la base de datos`);
+        console.log(`Integrados ${csvStudents.length} estudiantes del CSV en ${Object.keys(studentsByGrade).length} cursos`);
       }
       return csvStudents;
     } catch (error) {
