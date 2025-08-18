@@ -137,3 +137,5 @@ Para soporte técnico o consultas sobre funcionalidades adicionales, contactar a
 
 **Desarrollado específicamente para FUDE UMAG**  
 *Sistema de Tesorería v1.0*
+
+🌐 **Deploy automático configurado con Netlify**
