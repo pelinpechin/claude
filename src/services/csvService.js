@@ -2,55 +2,17 @@ import { parseCSVStudentData } from '../utils/csvParser';
 import { getEmbeddedCSVData } from '../data/csvData';
 
 export const csvService = {
-  // Cargar datos desde el archivo CSV
+  // Cargar datos desde CSV embebidos (sin archivo externo)
   async loadCSVData() {
     try {
-      // Intentar cargar el archivo Libro2.csv con configuración específica
-      const response = await fetch('/Libro2.csv', {
-        method: 'GET',
-        headers: {
-          'Accept': 'text/csv,text/plain,*/*',
-          'Cache-Control': 'no-cache'
-        }
-      });
-      
-      if (!response.ok) {
-        console.warn(`HTTP error: ${response.status} - ${response.statusText}`);
-        return [];
-      }
-
-      // Verificar que la respuesta tiene contenido
-      const contentLength = response.headers.get('content-length');
-      if (contentLength === '0' || contentLength === null) {
-        console.warn('El archivo CSV está vacío o no tiene contenido');
-        return [];
-      }
-      
-      const csvContent = await response.text();
-      
-      if (!csvContent || csvContent.trim().length === 0) {
-        console.warn('El contenido del CSV está vacío');
-        return [];
-      }
-      
-      const students = parseCSVStudentData(csvContent);
-      
-      console.log(`Cargados ${students.length} estudiantes desde CSV`);
+      console.log('Cargando datos embebidos directamente...');
+      const embeddedCSV = getEmbeddedCSVData();
+      const students = parseCSVStudentData(embeddedCSV);
+      console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
       return students;
     } catch (error) {
-      console.error('Error cargando CSV desde archivo:', error);
-      console.log('Usando datos embebidos como fallback...');
-      
-      // Usar datos embebidos como fallback
-      try {
-        const embeddedCSV = getEmbeddedCSVData();
-        const students = parseCSVStudentData(embeddedCSV);
-        console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
-        return students;
-      } catch (embeddedError) {
-        console.error('Error procesando datos embebidos:', embeddedError);
-        return [];
-      }
+      console.error('Error procesando datos embebidos:', error);
+      return [];
     }
   },
 
