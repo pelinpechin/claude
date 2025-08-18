@@ -2,17 +2,29 @@ import { parseCSVStudentData } from '../utils/csvParser';
 import { getEmbeddedCSVData } from '../data/csvData';
 
 export const csvService = {
-  // Cargar datos desde CSV embebidos (sin archivo externo)
+  // Cargar datos desde archivo CSV real actualizado
   async loadCSVData() {
     try {
-      console.log('Cargando datos embebidos directamente...');
-      const embeddedCSV = getEmbeddedCSVData();
-      const students = parseCSVStudentData(embeddedCSV);
-      console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
+      console.log('Cargando datos desde archivo CSV actualizado...');
+      const response = await fetch('/Libro2.csv');
+      if (!response.ok) {
+        console.log('No se encontró archivo CSV, usando datos embebidos...');
+        const embeddedCSV = getEmbeddedCSVData();
+        const students = parseCSVStudentData(embeddedCSV);
+        console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
+        return students;
+      }
+      
+      const csvContent = await response.text();
+      const students = parseCSVStudentData(csvContent);
+      console.log(`Cargados ${students.length} estudiantes desde archivo CSV real`);
       return students;
     } catch (error) {
-      console.error('Error procesando datos embebidos:', error);
-      return [];
+      console.error('Error procesando archivo CSV, usando datos embebidos:', error);
+      const embeddedCSV = getEmbeddedCSVData();
+      const students = parseCSVStudentData(embeddedCSV);
+      console.log(`Cargados ${students.length} estudiantes desde datos embebidos (fallback)`);
+      return students;
     }
   },
 

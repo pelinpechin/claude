@@ -6,7 +6,8 @@ export function parseCSVStudentData(csvContent) {
   // Buscar línea de encabezados
   let headerIndex = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('N°;N°Mat;Nombre;RUN;Sexo;F. Ingreso;Fecha Nac;Fono;CURSO;CORREO;T. BECA')) {
+    if (lines[i].includes('N°;N°Mat;Nombre;RUN;Sexo;F. Ingreso;Fecha Nac;Fono;CURSO;CORREO;T. BECA') || 
+        lines[i].includes('Nº;NºMat;Nombre;RUN;Sexo;F. Ingreso;Fecha Nac;Fono;CURSO;CORREO;T. BECA')) {
       headerIndex = i;
       break;
     }
@@ -36,8 +37,11 @@ export function parseCSVStudentData(csvContent) {
     const tipoBeca = columns[10]?.trim();
     const porcentajeBeca = columns[11]?.trim();
     
-    // Skip if essential data is missing
-    if (!nombre || !run || nombre.includes('TIPOS DE BECAS') || run.includes('ARANCEL') || nombre.length < 3) {
+    // Skip if essential data is missing or invalid
+    if (!nombre || !run || nombre === '0' || run === '0' || 
+        nombre.includes('TIPOS DE BECAS') || run.includes('ARANCEL') || 
+        nombre.length < 3 || nombre.includes('TODO LO QUE LLEVA') ||
+        run.includes('BOLETA') || nombre.includes('PRIMERA CUOTA')) {
       continue;
     }
     
@@ -51,25 +55,27 @@ export function parseCSVStudentData(csvContent) {
     let totalPagado = 0;
     const meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     
-    // Las cuotas están en las columnas desde el índice 15 en adelante
+    // Las cuotas están en las columnas desde el índice 16 en adelante (ajustado para nueva estructura)
     // Cada cuota tiene BOLETA, ARANCEL $, BECA $
     for (let j = 0; j < 10; j++) {
-      const baseIndex = 15 + (j * 3);
+      const baseIndex = 16 + (j * 3);
       const boleta = columns[baseIndex]?.trim() || '';
       const montoArancel = parseFloat(columns[baseIndex + 1]?.replace(/[$.,\s]/g, '') || '0');
       const montoBeca = parseFloat(columns[baseIndex + 2]?.replace(/[$.,\s]/g, '') || '0');
       
       const montoPagado = montoArancel > 0 ? montoArancel : 0;
+      const tieneBoleta = boleta && boleta !== '0' && boleta !== '';
+      
       cuotas.push({
         mes: meses[j],
-        boleta,
+        boleta: tieneBoleta ? boleta : '',
         montoArancel,
         montoBeca,
         montoPagado,
-        pagado: montoPagado > 0 && boleta !== ''
+        pagado: montoPagado > 0 && tieneBoleta
       });
       
-      if (montoPagado > 0 && boleta !== '') {
+      if (montoPagado > 0 && tieneBoleta) {
         totalPagado += montoPagado;
       }
     }
