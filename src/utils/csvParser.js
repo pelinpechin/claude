@@ -1,3 +1,110 @@
+// Función para procesar archivo alumnos.csv con estructura simplificada
+export function parseAlumnosCSV(csvContent) {
+  const lines = csvContent.split('\n');
+  const students = [];
+  
+  // Buscar línea de encabezados
+  let headerIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('nombre alumno;rut;curso;ARANCEL;MONTO DE BECA;CUOTA')) {
+      headerIndex = i;
+      break;
+    }
+  }
+  
+  if (headerIndex === -1) return [];
+  
+  // Procesar datos desde después del encabezado
+  for (let i = headerIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line || line.trim() === '') continue;
+    
+    const columns = line.split(';');
+    if (columns.length < 6) continue;
+    
+    // Extraer datos básicos
+    const nombre = columns[0]?.trim();
+    const rut = columns[1]?.trim();
+    const curso = columns[2]?.trim();
+    const arancelStr = columns[3]?.trim();
+    const becaStr = columns[4]?.trim();
+    const cuotaPagadaStr = columns[5]?.trim();
+    
+    // Skip if essential data is missing
+    if (!nombre || !rut || !curso || nombre.length < 3) {
+      continue;
+    }
+    
+    // Procesar valores monetarios
+    const arancel = parseFloat(arancelStr.replace(/[$.,]/g, '') || '0');
+    const montoBeca = parseFloat(becaStr.replace(/[$.,]/g, '') || '0');
+    const primeraCuotaPagada = parseFloat(cuotaPagadaStr.replace(/[$.,]/g, '') || '0');
+    
+    // Calcular datos derivados
+    const totalAPagar = arancel - montoBeca;
+    const tieneBeca100 = montoBeca >= arancel && montoBeca > 0;
+    const cuotaMensual = Math.round(totalAPagar / 10);
+    
+    // Determinar estado de pago
+    let status = 'pending';
+    let saldoPendiente = totalAPagar;
+    
+    if (tieneBeca100) {
+      status = 'scholarship';
+      saldoPendiente = 0;
+    } else if (primeraCuotaPagada > 0) {
+      status = 'paid';
+      saldoPendiente = Math.max(0, totalAPagar - primeraCuotaPagada);
+    }
+    
+    // Generar datos del apoderado basados en el nombre del estudiante
+    const nameParts = nombre.split(' ');
+    const apellido1 = nameParts[0] || 'Pérez';
+    const apellido2 = nameParts[1] || 'González';
+    
+    const guardianNames = ['Carlos', 'María', 'Luis', 'Carmen', 'Miguel', 'Rosa', 'Juan', 'Ana'];
+    const guardianName = guardianNames[Math.floor(Math.random() * guardianNames.length)];
+    const apoderadoCompleto = `${guardianName} ${apellido1} ${apellido2}`;
+    
+    const student = {
+      id: students.length + 1,
+      studentName: nombre,
+      rut: rut === '0' ? 'Sin RUT' : rut,
+      guardianName: apoderadoCompleto,
+      guardianPhone: '+56 9 0000 0000',
+      guardianEmail: `${guardianName.toLowerCase()}${apellido1.toLowerCase()}@email.com`,
+      grade: curso,
+      monthlyFee: cuotaMensual,
+      status: status,
+      lastPayment: primeraCuotaPagada > 0 ? 'MARZO' : 'Sin pagos',
+      dueDate: new Date().toISOString().split('T')[0],
+      balance: saldoPendiente,
+      // Datos adicionales
+      birthDate: '2010-01-01',
+      admissionDate: '2025-03-05',
+      sex: 'No especificado',
+      totalAnnualFee: arancel,
+      scholarshipAmount: montoBeca,
+      scholarshipType: montoBeca > 0 ? 'BECA' : 'Sin beca',
+      scholarshipPercentage: arancel > 0 ? Math.round((montoBeca / arancel) * 100) : 0,
+      hasFullScholarship: tieneBeca100,
+      cuotasPagadas: primeraCuotaPagada > 0 ? 1 : 0,
+      totalPagado: primeraCuotaPagada,
+      // Historial de pagos simplificado
+      paymentHistory: primeraCuotaPagada > 0 ? [{
+        date: '2024-03-15',
+        amount: primeraCuotaPagada,
+        concept: 'Primera cuota',
+        method: 'Transferencia'
+      }] : []
+    };
+    
+    students.push(student);
+  }
+  
+  return students;
+}
+
 // Utilidad para procesar el archivo CSV con datos reales de becas y pagos
 export function parseCSVStudentData(csvContent) {
   const lines = csvContent.split('\n');

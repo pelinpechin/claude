@@ -1,23 +1,31 @@
-import { parseCSVStudentData } from '../utils/csvParser';
+import { parseCSVStudentData, parseAlumnosCSV } from '../utils/csvParser';
 import { getEmbeddedCSVData } from '../data/csvData';
 
 export const csvService = {
-  // Cargar datos desde archivo CSV real actualizado
+  // Cargar datos desde archivo alumnos.csv (estructura simplificada)
   async loadCSVData() {
     try {
-      console.log('Cargando datos desde archivo CSV actualizado...');
-      const response = await fetch('/Libro2.csv');
+      console.log('Cargando datos desde archivo alumnos.csv...');
+      const response = await fetch('/alumnos.csv');
       if (!response.ok) {
-        console.log('No se encontró archivo CSV, usando datos embebidos...');
-        const embeddedCSV = getEmbeddedCSVData();
-        const students = parseCSVStudentData(embeddedCSV);
-        console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
+        console.log('No se encontró alumnos.csv, intentando con Libro2.csv...');
+        const libro2Response = await fetch('/Libro2.csv');
+        if (!libro2Response.ok) {
+          console.log('No se encontró archivo CSV, usando datos embebidos...');
+          const embeddedCSV = getEmbeddedCSVData();
+          const students = parseCSVStudentData(embeddedCSV);
+          console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
+          return students;
+        }
+        const csvContent = await libro2Response.text();
+        const students = parseCSVStudentData(csvContent);
+        console.log(`Cargados ${students.length} estudiantes desde Libro2.csv`);
         return students;
       }
       
       const csvContent = await response.text();
-      const students = parseCSVStudentData(csvContent);
-      console.log(`Cargados ${students.length} estudiantes desde archivo CSV real`);
+      const students = parseAlumnosCSV(csvContent);
+      console.log(`Cargados ${students.length} estudiantes desde alumnos.csv`);
       return students;
     } catch (error) {
       console.error('Error procesando archivo CSV, usando datos embebidos:', error);
