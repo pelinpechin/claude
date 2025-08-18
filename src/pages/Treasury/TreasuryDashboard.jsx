@@ -4,6 +4,8 @@ import PaymentHistory from '../../components/Treasury/PaymentHistory';
 import StatsCards from '../../components/Treasury/StatsCards';
 import CourseManager from '../../components/Treasury/CourseManager';
 import DataUpdater from '../../components/Treasury/DataUpdater';
+import StudentProfile from '../../components/Treasury/StudentProfile';
+import ScholarshipView from '../../components/Treasury/ScholarshipView';
 import { dataService } from '../../services/dataService';
 import { exportToCSV } from '../../utils/formatters';
 
@@ -14,7 +16,8 @@ const TreasuryDashboard = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showUpdater, setShowUpdater] = useState(false);
-  const [activeView, setActiveView] = useState('general'); // 'general' | 'courses'
+  const [showProfile, setShowProfile] = useState(false);
+  const [activeView, setActiveView] = useState('general'); // 'general' | 'courses' | 'scholarships'
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
 
@@ -57,6 +60,23 @@ const TreasuryDashboard = () => {
   const handleUpdatePayment = (student) => {
     setSelectedStudent(student);
     setShowUpdater(true);
+  };
+
+  const handleViewProfile = (student) => {
+    setSelectedStudent(student);
+    setShowProfile(true);
+  };
+
+  const handleDeleteStudent = (student) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar al estudiante ${student.studentName} (${student.rut})?\n\nEsta acción no se puede deshacer.`)) {
+      const result = dataService.deleteStudent(student.id);
+      if (result.success) {
+        alert(`Estudiante ${result.deletedStudent.studentName} eliminado exitosamente del curso ${result.grade}.`);
+        setAllStudents(dataService.getAllStudents());
+      } else {
+        alert(`Error al eliminar estudiante: ${result.error}`);
+      }
+    }
   };
 
   const handleExportCSV = () => {
@@ -113,10 +133,26 @@ const TreasuryDashboard = () => {
           >
             Gestión por Curso
           </button>
+          <button 
+            className={`btn ${activeView === 'scholarships' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveView('scholarships')}
+            style={{
+              background: activeView === 'scholarships' ? '#8b5cf6' : '#f3f4f6',
+              borderColor: activeView === 'scholarships' ? '#8b5cf6' : '#d1d5db',
+              color: activeView === 'scholarships' ? 'white' : '#374151'
+            }}
+          >
+            Becas 100%
+          </button>
         </div>
 
         {activeView === 'courses' ? (
           <CourseManager onStudentSelect={handleViewHistory} />
+        ) : activeView === 'scholarships' ? (
+          <ScholarshipView 
+            students={allStudents} 
+            onStudentClick={handleViewProfile}
+          />
         ) : (
           <div className="card">
           <div style={{ 
@@ -171,6 +207,7 @@ const TreasuryDashboard = () => {
               <option value="paid">Al día</option>
               <option value="pending">Pendientes</option>
               <option value="overdue">Vencidos</option>
+              <option value="scholarship">Beca 100%</option>
             </select>
           </div>
 
@@ -187,6 +224,7 @@ const TreasuryDashboard = () => {
               <thead>
                 <tr>
                   <th>Estudiante / Curso</th>
+                  <th>RUT Estudiante</th>
                   <th>Apoderado / Contacto</th>
                   <th>Estado</th>
                   <th>Mensualidad</th>
@@ -202,6 +240,8 @@ const TreasuryDashboard = () => {
                     student={student}
                     onViewHistory={handleViewHistory}
                     onUpdatePayment={handleUpdatePayment}
+                    onDeleteStudent={handleDeleteStudent}
+                    onViewProfile={handleViewProfile}
                   />
                 ))}
               </tbody>
@@ -236,6 +276,15 @@ const TreasuryDashboard = () => {
           setSelectedStudent(null);
         }}
         onUpdate={handleDataUpdate}
+      />
+
+      <StudentProfile
+        student={selectedStudent}
+        isOpen={showProfile}
+        onClose={() => {
+          setShowProfile(false);
+          setSelectedStudent(null);
+        }}
       />
     </div>
   );

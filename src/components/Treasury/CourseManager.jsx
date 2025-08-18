@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../../services/dataService';
 import { formatCurrency } from '../../utils/formatters';
 
-const CourseManager = ({ onStudentSelect }) => {
+const CourseManager = ({ onStudentSelect, onDeleteStudent }) => {
   const [courses] = useState(dataService.getAllCourses());
   const [selectedCourse, setSelectedCourse] = useState('');
   const [courseStudents, setCourseStudents] = useState([]);
@@ -253,13 +253,32 @@ const CourseManager = ({ onStudentSelect }) => {
                     }
                   </td>
                   <td>
-                    <button 
-                      className="btn btn-secondary"
-                      onClick={() => onStudentSelect && onStudentSelect({...student, grade: selectedCourse})}
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
-                    >
-                      Ver Detalle
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={() => onStudentSelect && onStudentSelect({...student, grade: selectedCourse})}
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+                      >
+                        Ver Detalle
+                      </button>
+                      {onDeleteStudent && (
+                        <button 
+                          className="btn"
+                          onClick={() => onDeleteStudent(student)}
+                          style={{ 
+                            padding: '0.5rem 1rem', 
+                            fontSize: '0.8rem',
+                            backgroundColor: '#e53e3e',
+                            color: '#fff',
+                            border: 'none'
+                          }}
+                          onMouseOver={(e) => e.target.style.backgroundColor = '#c53030'}
+                          onMouseOut={(e) => e.target.style.backgroundColor = '#e53e3e'}
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

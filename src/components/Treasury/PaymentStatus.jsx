@@ -1,12 +1,14 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
+import { Award } from 'lucide-react';
 
-const PaymentStatus = ({ student, onViewHistory, onUpdatePayment }) => {
+const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStudent, onViewProfile }) => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'paid': return 'status-paid';
       case 'pending': return 'status-pending';
       case 'overdue': return 'status-overdue';
+      case 'scholarship': return 'status-scholarship';
       default: return 'status-pending';
     }
   };
@@ -16,6 +18,7 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment }) => {
       case 'paid': return 'Al Día';
       case 'pending': return 'Pendiente';
       case 'overdue': return 'Vencido';
+      case 'scholarship': return 'Beca 100%';
       default: return 'Pendiente';
     }
   };
@@ -23,11 +26,28 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment }) => {
   return (
     <tr>
       <td>
-        <div>
-          <strong>{student.studentName}</strong>
-          <br />
+        <div 
+          style={{ cursor: 'pointer' }}
+          onClick={() => onViewProfile && onViewProfile(student)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <strong>{student.studentName}</strong>
+            {student.hasFullScholarship && (
+              <Award size={16} style={{ color: '#8b5cf6' }} title="Beca 100%" />
+            )}
+          </div>
           <small style={{ color: '#666' }}>{student.grade}</small>
+          {student.cuotasPagadas !== undefined && (
+            <div style={{ fontSize: '0.75rem', color: '#8b5cf6', marginTop: '0.25rem' }}>
+              {student.cuotasPagadas}/10 cuotas pagadas
+            </div>
+          )}
         </div>
+      </td>
+      <td>
+        <strong style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+          {student.rut}
+        </strong>
       </td>
       <td>
         <div>
@@ -38,30 +58,69 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment }) => {
       </td>
       <td>
         <span className={`status ${getStatusClass(student.status)}`}>
+          {student.hasFullScholarship && <Award size={14} style={{ marginRight: '0.25rem' }} />}
           {getStatusText(student.status)}
         </span>
       </td>
-      <td>{formatCurrency(student.monthlyFee)}</td>
+      <td>
+        <div>
+          {formatCurrency(student.monthlyFee)}
+          {student.scholarshipPercentage > 0 && (
+            <div style={{ fontSize: '0.75rem', color: '#8b5cf6' }}>
+              -{student.scholarshipPercentage}% beca
+            </div>
+          )}
+        </div>
+      </td>
       <td style={{ color: student.balance > 0 ? '#c53030' : '#22543d', fontWeight: 'bold' }}>
         {formatCurrency(student.balance)}
+        {student.totalPagado > 0 && (
+          <div style={{ fontSize: '0.75rem', color: '#666', fontWeight: 'normal' }}>
+            Pagado: {formatCurrency(student.totalPagado)}
+          </div>
+        )}
       </td>
       <td>{new Date(student.dueDate).toLocaleDateString('es-CL')}</td>
       <td>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button 
+            className="btn btn-info"
+            onClick={() => onViewProfile && onViewProfile(student)}
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+          >
+            Ver Perfil
+          </button>
+          <button 
             className="btn btn-secondary"
             onClick={() => onViewHistory(student)}
-            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
           >
-            Ver Historial
+            Historial
           </button>
           {student.balance > 0 && onUpdatePayment && (
             <button 
               className="btn btn-primary"
               onClick={() => onUpdatePayment(student)}
-              style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
             >
-              Registrar Pago
+              Pagar
+            </button>
+          )}
+          {onDeleteStudent && (
+            <button 
+              className="btn"
+              onClick={() => onDeleteStudent(student)}
+              style={{ 
+                padding: '0.4rem 0.8rem', 
+                fontSize: '0.8rem',
+                backgroundColor: '#e53e3e',
+                color: '#fff',
+                border: 'none'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#c53030'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#e53e3e'}
+            >
+              Eliminar
             </button>
           )}
         </div>

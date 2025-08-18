@@ -76,6 +76,16 @@ body {
   background-color: #cbd5e0;
 }
 
+.btn-info {
+  background-color: #4299e1;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #3182ce;
+  transform: translateY(-2px);
+}
+
 .status {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -97,6 +107,14 @@ body {
 .status-overdue {
   background-color: #fbb6ce;
   color: #97266d;
+}
+
+.status-scholarship {
+  background-color: #e9d5ff;
+  color: #8b5cf6;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .table {
