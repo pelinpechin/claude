@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { Award } from 'lucide-react';
 
@@ -23,12 +23,41 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStuden
     }
   };
 
+  // Optimizar handlers con useCallback
+  const handleViewProfile = useCallback((e) => {
+    e.preventDefault();
+    if (onViewProfile) {
+      requestAnimationFrame(() => onViewProfile(student));
+    }
+  }, [onViewProfile, student]);
+
+  const handleViewHistory = useCallback((e) => {
+    e.preventDefault();
+    if (onViewHistory) {
+      requestAnimationFrame(() => onViewHistory(student));
+    }
+  }, [onViewHistory, student]);
+
+  const handleUpdatePayment = useCallback((e) => {
+    e.preventDefault();
+    if (onUpdatePayment) {
+      requestAnimationFrame(() => onUpdatePayment(student));
+    }
+  }, [onUpdatePayment, student]);
+
+  const handleDeleteStudent = useCallback((e) => {
+    e.preventDefault();
+    if (onDeleteStudent) {
+      requestAnimationFrame(() => onDeleteStudent(student));
+    }
+  }, [onDeleteStudent, student]);
+
   return (
     <tr>
       <td>
         <div 
           style={{ cursor: 'pointer' }}
-          onClick={() => onViewProfile && onViewProfile(student)}
+          onClick={handleViewProfile}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <strong>{student.studentName}</strong>
@@ -85,14 +114,14 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStuden
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button 
             className="btn btn-info"
-            onClick={() => onViewProfile && onViewProfile(student)}
+            onClick={handleViewProfile}
             style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
           >
             Ver Perfil
           </button>
           <button 
             className="btn btn-secondary"
-            onClick={() => onViewHistory(student)}
+            onClick={handleViewHistory}
             style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
           >
             Historial
@@ -100,7 +129,7 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStuden
           {student.balance > 0 && onUpdatePayment && (
             <button 
               className="btn btn-primary"
-              onClick={() => onUpdatePayment(student)}
+              onClick={handleUpdatePayment}
               style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
             >
               Pagar
@@ -109,7 +138,7 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStuden
           {onDeleteStudent && (
             <button 
               className="btn"
-              onClick={() => onDeleteStudent(student)}
+              onClick={handleDeleteStudent}
               style={{ 
                 padding: '0.4rem 0.8rem', 
                 fontSize: '0.8rem',

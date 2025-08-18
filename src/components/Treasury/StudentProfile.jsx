@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { X, User, Phone, Mail, Calendar, GraduationCap, DollarSign, Award, FileText } from 'lucide-react';
 
 const StudentProfile = ({ student, isOpen, onClose }) => {
@@ -382,4 +382,4 @@ const StudentProfile = ({ student, isOpen, onClose }) => {
   );
 };
 
-export default StudentProfile;
+export default memo(StudentProfile);
