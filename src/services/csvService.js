@@ -1,4 +1,5 @@
 import { parseCSVStudentData } from '../utils/csvParser';
+import { getEmbeddedCSVData } from '../data/csvData';
 
 export const csvService = {
   // Cargar datos desde el archivo CSV
@@ -37,9 +38,19 @@ export const csvService = {
       console.log(`Cargados ${students.length} estudiantes desde CSV`);
       return students;
     } catch (error) {
-      console.error('Error cargando CSV:', error);
-      // Retornar datos mock en caso de error en producción
-      return [];
+      console.error('Error cargando CSV desde archivo:', error);
+      console.log('Usando datos embebidos como fallback...');
+      
+      // Usar datos embebidos como fallback
+      try {
+        const embeddedCSV = getEmbeddedCSVData();
+        const students = parseCSVStudentData(embeddedCSV);
+        console.log(`Cargados ${students.length} estudiantes desde datos embebidos`);
+        return students;
+      } catch (embeddedError) {
+        console.error('Error procesando datos embebidos:', embeddedError);
+        return [];
+      }
     }
   },
 
