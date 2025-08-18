@@ -2,6 +2,7 @@
 export function parseAlumnosCSV(csvContent) {
   const lines = csvContent.split('\n');
   const students = [];
+  const seenRuts = new Set(); // Para trackear RUTs ya procesados
   
   // Buscar línea de encabezados
   let headerIndex = -1;
@@ -34,6 +35,20 @@ export function parseAlumnosCSV(csvContent) {
     if (!nombre || !rut || !curso || nombre.length < 3) {
       continue;
     }
+    
+    // Normalizar RUT y validar
+    const normalizedRut = rut.trim().toLowerCase();
+    
+    // Skip if RUT is invalid or already seen (eliminar duplicados)
+    if (normalizedRut === '0' || normalizedRut === '' || seenRuts.has(normalizedRut)) {
+      if (seenRuts.has(normalizedRut)) {
+        console.log(`Duplicado eliminado: ${nombre} con RUT ${rut}`);
+      }
+      continue;
+    }
+    
+    // Registrar este RUT como procesado
+    seenRuts.add(normalizedRut);
     
     // Procesar valores monetarios
     const arancel = parseFloat(arancelStr.replace(/[$.,]/g, '') || '0');
@@ -69,7 +84,7 @@ export function parseAlumnosCSV(csvContent) {
     const student = {
       id: students.length + 1,
       studentName: nombre,
-      rut: rut === '0' ? 'Sin RUT' : rut,
+      rut: normalizedRut === '0' ? 'Sin RUT' : rut,
       guardianName: apoderadoCompleto,
       guardianPhone: '+56 9 0000 0000',
       guardianEmail: `${guardianName.toLowerCase()}${apellido1.toLowerCase()}@email.com`,
@@ -101,6 +116,9 @@ export function parseAlumnosCSV(csvContent) {
     
     students.push(student);
   }
+  
+  console.log(`Parser completado: ${students.length} estudiantes únicos procesados`);
+  console.log(`RUTs únicos registrados: ${seenRuts.size}`);
   
   return students;
 }
