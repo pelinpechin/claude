@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatCurrency } from '../../utils/formatters';
 
-const PaymentStatus = ({ student, onViewHistory }) => {
+const PaymentStatus = ({ student, onViewHistory, onUpdatePayment }) => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'paid': return 'status-paid';
@@ -47,13 +47,24 @@ const PaymentStatus = ({ student, onViewHistory }) => {
       </td>
       <td>{new Date(student.dueDate).toLocaleDateString('es-CL')}</td>
       <td>
-        <button 
-          className="btn btn-secondary"
-          onClick={() => onViewHistory(student)}
-          style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
-        >
-          Ver Historial
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => onViewHistory(student)}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+          >
+            Ver Historial
+          </button>
+          {student.balance > 0 && onUpdatePayment && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => onUpdatePayment(student)}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+            >
+              Registrar Pago
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );
