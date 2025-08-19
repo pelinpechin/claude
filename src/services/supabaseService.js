@@ -16,6 +16,12 @@ export class SupabaseService {
   
   async checkConnection() {
     try {
+      // Si supabase es null, no está configurado
+      if (!supabase) {
+        this.isConnected = false;
+        return false;
+      }
+
       const { data, error } = await supabase
         .from(dbConfig.tables.settings)
         .select('key')
