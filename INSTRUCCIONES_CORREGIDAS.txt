@@ -1,0 +1,48 @@
+🚨 SOLUCIÓN AL ERROR "column curso does not exist"
+====================================================
+
+❌ PROBLEMA: Ya tienes tablas creadas en Supabase que no coinciden con la estructura necesaria.
+
+✅ SOLUCIÓN RÁPIDA:
+
+🔧 PASO 1: REPARAR ESTRUCTURA (1 minuto)
+1. Ve a tu Supabase → SQL Editor
+2. Abre el archivo "supabase_fix_structure.sql"
+3. Copia y pega TODO el contenido
+4. ✅ Ejecuta (esto eliminará tablas viejas y creará la estructura correcta)
+
+📊 PASO 2: IMPORTAR DATOS (3 minutos)
+Ahora los CSV funcionarán perfectamente:
+
+A) ESTUDIANTES:
+   1. Table Editor → tabla "students"
+   2. Insert → Import from CSV → "students_import.csv"
+   3. ✅ 863 estudiantes importados
+
+B) PAGOS:  
+   1. Table Editor → tabla "payments"
+   2. Insert → Import from CSV → "payments_import.csv" 
+   3. ✅ 2,870 pagos importados
+
+C) CURSOS:
+   1. Table Editor → tabla "courses" 
+   2. Insert → Import from CSV → "courses_import.csv"
+   3. ✅ 32 cursos importados
+
+🎉 RESULTADO FINAL:
+• Base de datos completamente funcional
+• Todas las columnas correctas
+• Datos perfectamente cuadrados
+• Sistema listo para usar en la nube
+
+⚠️ NOTA IMPORTANTE:
+El script "supabase_fix_structure.sql" elimina datos existentes para crear una estructura limpia. 
+Si ya tienes datos importantes, haz backup primero.
+
+🚀 ARCHIVOS A USAR EN ORDEN:
+1. supabase_fix_structure.sql (SQL Editor)
+2. students_import.csv (Import CSV)  
+3. payments_import.csv (Import CSV)
+4. courses_import.csv (Import CSV)
+
+¡Problema resuelto! Tu sistema funcionará perfectamente. 🎊

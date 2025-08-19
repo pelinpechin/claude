@@ -40,27 +40,40 @@ export class SupabaseService {
   // ESTUDIANTES
   // =====================================================
 
-  async getAllStudents() {
+  async getStudents() {
     try {
-      const { data, error } = await supabase
-        .from(dbConfig.tables.students)
-        .select(`
-          *,
-          courses (
-            name,
-            level,
-            monthly_fee
-          )
-        `)
-        .order('student_name');
+      if (!supabase) {
+        console.warn('Supabase no configurado, retornando array vacío');
+        return [];
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('nombre');
+
+      if (error) {
+        console.error('Error fetching students from Supabase:', error);
+        return [];
+      }
       
-      // Convertir formato para compatibilidad con el sistema actual
-      return data.map(student => this.formatStudentFromDB(student));
+      // Convertir formato de Supabase al formato esperado por la aplicación
+      return data.map(student => ({
+        id: student.id,
+        rut: student.rut,
+        studentName: student.nombre,
+        guardianName: 'Apoderado', // Campo que se puede mejorar
+        grade: student.curso,
+        status: this.calculateStatus(student),
+        totalPaid: student.total_pagado || 0,
+        pendingAmount: student.saldo_pendiente || 0,
+        monthlyFee: Math.round((student.arancel_anual - student.monto_beca) / 10),
+        phone: student.telefono || '',
+        email: student.email || ''
+      }));
     } catch (error) {
       console.error('Error fetching students:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -137,30 +150,33 @@ export class SupabaseService {
   // PAGOS
   // =====================================================
 
-  async recordPayment(studentId, paymentData) {
+  async createPayment(paymentData) {
     try {
-      // Registrar el pago
+      if (!supabase) {
+        throw new Error('Supabase no configurado');
+      }
+
       const { data: payment, error: paymentError } = await supabase
-        .from(dbConfig.tables.payments)
+        .from('payments')
         .insert([{
-          student_id: studentId,
-          amount: paymentData.amount,
-          payment_date: paymentData.date,
-          concept: paymentData.concept,
-          payment_method: paymentData.method,
-          notes: paymentData.notes || null
+          student_rut: paymentData.studentRut,
+          numero_cuota: paymentData.month || 1,
+          monto: parseInt(paymentData.amount),
+          fecha_pago: paymentData.paymentDate,
+          concepto: paymentData.concept,
+          metodo_pago: paymentData.method || 'Efectivo'
         }])
         .select()
         .single();
 
       if (paymentError) throw paymentError;
 
-      // Actualizar el balance del estudiante
-      await this.updateStudentBalance(studentId);
+      // Actualizar totales del estudiante
+      await this.updateStudentTotals(paymentData.studentRut);
 
       return payment;
     } catch (error) {
-      console.error('Error recording payment:', error);
+      console.error('Error creating payment:', error);
       throw error;
     }
   }
@@ -181,52 +197,50 @@ export class SupabaseService {
     }
   }
 
-  async updateStudentBalance(studentId) {
+  async updateStudentTotals(studentRut) {
     try {
       // Calcular total pagado
       const { data: payments } = await supabase
-        .from(dbConfig.tables.payments)
-        .select('amount')
-        .eq('student_id', studentId);
+        .from('payments')
+        .select('monto')
+        .eq('student_rut', studentRut);
 
-      const totalPaid = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      const totalPaid = payments?.reduce((sum, p) => sum + (p.monto || 0), 0) || 0;
 
       // Obtener datos del estudiante
       const { data: student } = await supabase
-        .from(dbConfig.tables.students)
-        .select('total_annual_fee, scholarship_amount')
-        .eq('id', studentId)
+        .from('students')
+        .select('arancel_anual, monto_beca')
+        .eq('rut', studentRut)
         .single();
 
       if (student) {
-        const totalDue = (student.total_annual_fee || 0) - (student.scholarship_amount || 0);
+        const totalDue = (student.arancel_anual || 0) - (student.monto_beca || 0);
         const balance = Math.max(0, totalDue - totalPaid);
-        const installmentsPaid = Math.floor(totalPaid / (student.monthly_fee || 1));
-
+        
         // Determinar estado
-        let status = 'pending';
-        if (student.has_full_scholarship) {
-          status = 'scholarship';
+        let status = 'pendiente';
+        if (student.monto_beca >= student.arancel_anual) {
+          status = 'beca_completa';
         } else if (balance === 0) {
-          status = 'paid';
-        } else if (installmentsPaid < this.getExpectedInstallments()) {
-          status = 'overdue';
+          status = 'al_dia';
+        } else if (totalPaid > 0) {
+          status = 'parcial';
         }
 
         // Actualizar estudiante
         await supabase
-          .from(dbConfig.tables.students)
+          .from('students')
           .update({
-            total_paid: totalPaid,
-            balance: balance,
-            installments_paid: installmentsPaid,
-            status: status,
-            last_payment_date: payments?.[0]?.payment_date || null
+            total_pagado: totalPaid,
+            saldo_pendiente: balance,
+            estado_pago: status,
+            updated_at: new Date().toISOString()
           })
-          .eq('id', studentId);
+          .eq('rut', studentRut);
       }
     } catch (error) {
-      console.error('Error updating student balance:', error);
+      console.error('Error updating student totals:', error);
       throw error;
     }
   }
@@ -359,69 +373,57 @@ export class SupabaseService {
   // UTILIDADES DE FORMATO
   // =====================================================
 
-  formatStudentFromDB(dbStudent) {
-    return {
-      id: dbStudent.id,
-      rut: dbStudent.rut,
-      studentName: dbStudent.student_name,
-      birthDate: dbStudent.birth_date,
-      sex: dbStudent.sex,
-      enrollmentDate: dbStudent.enrollment_date,
-      guardianName: dbStudent.guardian_name,
-      guardianRut: dbStudent.guardian_rut,
-      guardianPhone: dbStudent.guardian_phone,
-      guardianEmail: dbStudent.guardian_email,
-      guardianAddress: dbStudent.guardian_address,
-      grade: dbStudent.grade,
-      monthlyFee: dbStudent.monthly_fee,
-      totalAnnualFee: dbStudent.total_annual_fee,
-      scholarshipAmount: dbStudent.scholarship_amount,
-      scholarshipPercentage: dbStudent.scholarship_percentage,
-      scholarshipType: dbStudent.scholarship_type,
-      hasFullScholarship: dbStudent.has_full_scholarship,
-      status: dbStudent.status,
-      balance: dbStudent.balance,
-      totalPaid: dbStudent.total_paid,
-      cuotasPagadas: dbStudent.installments_paid,
-      lastPayment: dbStudent.last_payment_date,
-      dueDate: dbStudent.due_date,
-      paymentHistory: [] // Se carga por separado si es necesario
-    };
+  calculateStatus(student) {
+    if (!student) return 'pendiente';
+    
+    const arancel = student.arancel_anual || 0;
+    const beca = student.monto_beca || 0;
+    const pagado = student.total_pagado || 0;
+    
+    // Si tiene beca completa
+    if (beca >= arancel) {
+      return 'scholarship';
+    }
+    
+    const totalDue = arancel - beca;
+    const balance = totalDue - pagado;
+    
+    if (balance <= 0) {
+      return 'paid';
+    } else if (pagado > 0) {
+      return 'pending';
+    } else {
+      return 'overdue';
+    }
   }
 
-  formatStudentForDB(student) {
-    return {
-      rut: student.rut,
-      student_name: student.studentName,
-      birth_date: student.birthDate,
-      sex: student.sex,
-      enrollment_date: student.enrollmentDate || student.admissionDate,
-      guardian_name: student.guardianName,
-      guardian_rut: student.guardianRut,
-      guardian_phone: student.guardianPhone,
-      guardian_email: student.guardianEmail,
-      guardian_address: student.guardianAddress,
-      grade: student.grade,
-      monthly_fee: student.monthlyFee,
-      total_annual_fee: student.totalAnnualFee,
-      scholarship_amount: student.scholarshipAmount || 0,
-      scholarship_percentage: student.scholarshipPercentage || 0,
-      scholarship_type: student.scholarshipType || 'Sin beca',
-      has_full_scholarship: student.hasFullScholarship || false,
-      status: student.status || 'pending',
-      balance: student.balance || 0,
-      total_paid: student.totalPagado || 0,
-      installments_paid: student.cuotasPagadas || 0,
-      last_payment_date: student.lastPayment,
-      due_date: student.dueDate
-    };
+  async updatePayment(studentRut, paymentData) {
+    try {
+      const result = await this.createPayment({
+        studentRut,
+        ...paymentData
+      });
+      return { success: true, payment: result };
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      return { success: false, error: error.message };
+    }
   }
 
-  getExpectedInstallments() {
-    const now = new Date();
-    const month = now.getMonth(); // 0-based
-    // Marzo = 2, entonces cuotas esperadas = month - 1 (máximo 10)
-    return Math.min(Math.max(0, month - 1), 10);
+  async getPaymentHistory(studentRut) {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('student_rut', studentRut)
+        .order('fecha_pago', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      return [];
+    }
   }
 }
 

@@ -1,0 +1,33 @@
+codigo,nombre,nivel,capacidad,arancel_mensual
+"1� BASICO A","1� BASICO A","Básica",35,111100
+"1� BASICO B","1� BASICO B","Básica",35,111100
+"1� MEDIO A","1� MEDIO A","Media",40,145000
+"1� MEDIO B","1� MEDIO B","Media",40,145000
+"1� MEDIO C","1� MEDIO C","Media",40,145000
+"2� BASICO A","2� BASICO A","Básica",35,111100
+"2� BASICO B","2� BASICO B","Básica",35,111100
+"2� MEDIO A","2� MEDIO A","Media",40,145000
+"2� MEDIO B","2� MEDIO B","Media",40,145000
+"2� MEDIO C","2� MEDIO C","Media",40,145000
+"3� BASICO A","3� BASICO A","Básica",35,111100
+"3� BASICO B","3� BASICO B","Básica",35,111100
+"3� MEDIO A","3� MEDIO A","Media",40,145000
+"3� MEDIO B","3� MEDIO B","Media",40,145000
+"3� MEDIO C","3� MEDIO C","Media",40,145000
+"4� BASICO A","4� BASICO A","Básica",35,111100
+"4� BASICO B","4� BASICO B","Básica",35,111100
+"4� MEDIO A","4� MEDIO A","Media",40,145000
+"4� MEDIO B","4� MEDIO B","Media",40,145000
+"4� MEDIO C","4� MEDIO C","Media",40,145000
+"5� BASICO A","5� BASICO A","Básica",35,111100
+"5� BASICO B","5� BASICO B","Básica",35,111100
+"6� BASICO A","6� BASICO A","Básica",35,111100
+"6� BASICO B","6� BASICO B","Básica",35,111100
+"7� BASICO A","7� BASICO A","Básica",35,111100
+"7� BASICO B","7� BASICO B","Básica",35,111100
+"8� BASICO A","8� BASICO A","Básica",35,111100
+"8� BASICO B","8� BASICO B","Básica",35,111100
+"NT1 A","NT1 A","Parvularia",25,126500
+"NT1 B","NT1 B","Parvularia",25,126500
+"NT2 A","NT2 A","Parvularia",25,126500
+"NT2 B","NT2 B","Parvularia",25,126500

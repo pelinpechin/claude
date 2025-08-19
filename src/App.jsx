@@ -1,10 +1,11 @@
 import React from 'react';
-import TreasuryDashboard from './pages/Treasury/TreasuryDashboard';
+import ModernTreasuryDashboard from './pages/Treasury/ModernTreasuryDashboard';
+import './index.css';
 
 function App() {
   return (
     <div className="App">
-      <TreasuryDashboard />
+      <ModernTreasuryDashboard />
     </div>
   );
 }

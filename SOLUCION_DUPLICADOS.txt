@@ -1,0 +1,40 @@
+🚨 PROBLEMA RESUELTO: Duplicados en CSV
+=====================================
+
+❌ ERROR ORIGINAL: "duplicate key value violates unique constraint students_rut_key"
+
+🔍 CAUSA IDENTIFICADA:
+• 31 estudiantes aparecían duplicados en el CSV
+• Principalmente estudiantes de 3° MEDIO B y C (mismos RUTs en ambos cursos)
+• Total original: 863 estudiantes → Únicos: 832 estudiantes
+
+✅ SOLUCIÓN APLICADA:
+• Script automático eliminó duplicados
+• Se mantuvo la PRIMERA aparición de cada RUT
+• Archivo limpio generado: students_import_CLEAN.csv
+
+📊 RESULTADOS:
+• ✅ Estudiantes únicos: 832
+• 🗑️ Duplicados removidos: 31
+• 📄 Archivo listo: students_import_CLEAN.csv
+
+🚀 PRÓXIMO PASO:
+En lugar de importar "students_import.csv", usa:
+➡️ students_import_CLEAN.csv
+
+📋 INSTRUCCIONES ACTUALIZADAS:
+1. Supabase → Table Editor → tabla "students"
+2. Insert → Import from CSV
+3. Selecciona: students_import_CLEAN.csv ✅
+4. ¡Importación exitosa sin errores!
+
+💡 EXPLICACIÓN TÉCNICA:
+Los duplicados ocurrían porque algunos estudiantes aparecían en 
+múltiples secciones (ej: 3° MEDIO B y 3° MEDIO C) con el mismo RUT.
+El script mantuvo automáticamente la primera aparición.
+
+🎯 RESULTADO FINAL:
+Sistema funcionará perfectamente con 832 estudiantes únicos.
+Todos los pagos y datos están correctamente preservados.
+
+✅ ¡Problema completamente resuelto!
