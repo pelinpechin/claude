@@ -26,10 +26,25 @@ export function parseAlumnosCSV(csvContent) {
     // Extraer datos básicos
     const nombre = columns[0]?.trim();
     const rut = columns[1]?.trim();
-    const curso = columns[2]?.trim();
+    let curso = columns[2]?.trim();
     const arancelStr = columns[3]?.trim();
     const becaStr = columns[4]?.trim();
     const cuotaPagadaStr = columns[5]?.trim();
+    
+    // Corregir símbolos y caracteres especiales en el curso
+    if (curso) {
+      curso = curso
+        .replace(/(\d)\?/g, '$1°') // Reemplazar ? por °
+        .replace(/BASICO/gi, 'BÁSICO') // Corregir BASICO a BÁSICO
+        .replace(/1\? /g, '1° ')
+        .replace(/2\? /g, '2° ')
+        .replace(/3\? /g, '3° ')
+        .replace(/4\? /g, '4° ')
+        .replace(/5\? /g, '5° ')
+        .replace(/6\? /g, '6° ')
+        .replace(/7\? /g, '7° ')
+        .replace(/8\? /g, '8° ');
+    }
     
     // Skip if essential data is missing
     if (!nombre || !rut || !curso || nombre.length < 3) {

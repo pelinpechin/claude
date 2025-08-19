@@ -29214,6 +29214,24 @@ export const exportUpdatedData = () => {
   };
 };
 
+// Función para limpiar completamente la base de datos
+export const clearAllStudentData = () => {
+  try {
+    console.log('Limpiando toda la base de datos de estudiantes...');
+    
+    // Limpiar todas las claves existentes
+    Object.keys(studentsByGrade).forEach(grade => {
+      delete studentsByGrade[grade];
+    });
+    
+    console.log('Base de datos limpiada completamente');
+    return true;
+  } catch (error) {
+    console.error('Error limpiando la base de datos:', error);
+    return false;
+  }
+};
+
 // Función para importar estudiantes desde CSV
 export const importCSVStudents = (csvStudentsByGrade) => {
   try {
@@ -29236,6 +29254,28 @@ export const importCSVStudents = (csvStudentsByGrade) => {
     return true;
   } catch (error) {
     console.error('Error importando estudiantes del CSV:', error);
+    return false;
+  }
+};
+
+// Función para reconstruir completamente desde alumnos.csv
+export const rebuildFromAlumnosCSV = (csvStudentsByGrade) => {
+  try {
+    console.log('Reconstruyendo base de datos desde alumnos.csv...');
+    
+    // Paso 1: Limpiar completamente
+    clearAllStudentData();
+    
+    // Paso 2: Importar nuevos datos
+    const result = importCSVStudents(csvStudentsByGrade);
+    
+    if (result) {
+      console.log(`Reconstrucción completada exitosamente. ${Object.keys(csvStudentsByGrade).length} cursos creados.`);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error reconstruyendo la base de datos:', error);
     return false;
   }
 };

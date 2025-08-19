@@ -380,6 +380,58 @@ class DataService {
     const allStudents = this.getAllStudents();
     return csvService.generateScholarshipReport(allStudents);
   }
+
+  // Reconstruir completamente la base de datos desde alumnos.csv
+  async rebuildDatabaseFromAlumnos() {
+    try {
+      console.log('Iniciando reconstrucción completa de la base de datos...');
+      
+      // Cargar y procesar datos desde alumnos.csv
+      const csvStudents = await csvService.loadAlumnosCSV();
+      
+      if (csvStudents.length === 0) {
+        console.warn('No se encontraron estudiantes en alumnos.csv');
+        return { success: false, error: 'No hay datos para procesar' };
+      }
+      
+      // Organizar estudiantes por curso
+      const studentsByGrade = {};
+      csvStudents.forEach(student => {
+        if (!studentsByGrade[student.grade]) {
+          studentsByGrade[student.grade] = [];
+        }
+        studentsByGrade[student.grade].push(student);
+      });
+      
+      // Importar a la base de datos usando la nueva función
+      const { rebuildFromAlumnosCSV } = await import('../data/realDatabase.js');
+      const success = rebuildFromAlumnosCSV(studentsByGrade);
+      
+      if (success) {
+        this.notify({
+          type: 'DATABASE_REBUILT',
+          studentsCount: csvStudents.length,
+          coursesCount: Object.keys(studentsByGrade).length,
+          courses: Object.keys(studentsByGrade),
+          timestamp: new Date().toISOString()
+        });
+        
+        console.log(`Base de datos reconstruida exitosamente: ${csvStudents.length} estudiantes en ${Object.keys(studentsByGrade).length} cursos`);
+        
+        return {
+          success: true,
+          studentsCount: csvStudents.length,
+          coursesCount: Object.keys(studentsByGrade).length,
+          courses: Object.keys(studentsByGrade)
+        };
+      } else {
+        return { success: false, error: 'Error durante la reconstrucción' };
+      }
+    } catch (error) {
+      console.error('Error reconstruyendo la base de datos:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Instancia singleton del servicio

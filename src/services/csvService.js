@@ -2,6 +2,25 @@ import { parseCSVStudentData, parseAlumnosCSV } from '../utils/csvParser';
 import { getEmbeddedCSVData } from '../data/csvData';
 
 export const csvService = {
+  // Cargar datos exclusivamente desde alumnos.csv
+  async loadAlumnosCSV() {
+    try {
+      console.log('Cargando datos exclusivamente desde alumnos.csv...');
+      const response = await fetch('/alumnos.csv');
+      if (!response.ok) {
+        throw new Error('No se encontró archivo alumnos.csv');
+      }
+      
+      const csvContent = await response.text();
+      const students = parseAlumnosCSV(csvContent);
+      console.log(`Cargados ${students.length} estudiantes desde alumnos.csv`);
+      return students;
+    } catch (error) {
+      console.error('Error cargando alumnos.csv:', error);
+      throw error;
+    }
+  },
+
   // Cargar datos desde archivo alumnos.csv (estructura simplificada)
   async loadCSVData() {
     try {

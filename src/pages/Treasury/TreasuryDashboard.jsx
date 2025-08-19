@@ -20,6 +20,7 @@ const TreasuryDashboard = () => {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'courses' | 'scholarships'
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [isRebuilding, setIsRebuilding] = useState(false);
 
   useEffect(() => {
     // Cargar datos CSV embebidos al inicio
@@ -114,6 +115,28 @@ const TreasuryDashboard = () => {
     setAllStudents(dataService.getAllStudents());
   };
 
+  const handleRebuildDatabase = async () => {
+    if (window.confirm('¿Estás seguro de que quieres reconstruir toda la base de datos desde alumnos.csv?\n\nEsto eliminará todos los estudiantes actuales y los reemplazará con los datos del archivo CSV.\n\n¡Esta acción no se puede deshacer!')) {
+      setIsRebuilding(true);
+      try {
+        const result = await dataService.rebuildDatabaseFromAlumnos();
+        if (result.success) {
+          alert(`Base de datos reconstruida exitosamente!\n\n✅ ${result.studentsCount} estudiantes cargados\n✅ ${result.coursesCount} cursos creados\n\nCursos: ${result.courses.join(', ')}`);
+          // Actualizar el estado local
+          setAllStudents(dataService.getAllStudents());
+          setAllCourses(dataService.getAllCourses());
+        } else {
+          alert(`Error reconstruyendo la base de datos: ${result.error}`);
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+        console.error('Error rebuilding database:', error);
+      } finally {
+        setIsRebuilding(false);
+      }
+    }
+  };
+
   return (
     <div>
       <div className="header">
@@ -156,6 +179,20 @@ const TreasuryDashboard = () => {
             }}
           >
             Becas 100%
+          </button>
+          <button 
+            className="btn"
+            onClick={handleRebuildDatabase}
+            disabled={isRebuilding}
+            style={{
+              background: isRebuilding ? '#9ca3af' : '#dc2626',
+              borderColor: isRebuilding ? '#9ca3af' : '#dc2626',
+              color: 'white',
+              marginLeft: 'auto',
+              fontWeight: 'bold'
+            }}
+          >
+            {isRebuilding ? '🔄 Reconstruyendo...' : '🔄 Reconstruir desde CSV'}
           </button>
         </div>
 
