@@ -21,6 +21,7 @@ const TreasuryDashboard = () => {
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [isRebuilding, setIsRebuilding] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState({ status: 'disconnected', isActive: false });
 
   useEffect(() => {
     // Cargar datos CSV embebidos al inicio
@@ -40,10 +41,17 @@ const TreasuryDashboard = () => {
     loadInitialData();
 
     // Suscribirse a cambios
-    const unsubscribe = dataService.subscribe(() => {
-      setAllStudents(dataService.getAllStudents());
+    const unsubscribe = dataService.subscribe(async () => {
+      const students = await dataService.getAllStudents();
+      setAllStudents(Array.isArray(students) ? students : []);
       setAllCourses(dataService.getAllCourses());
+      setSupabaseStatus(dataService.getSupabaseStatus());
     });
+
+    // Obtener estado inicial de Supabase
+    setTimeout(() => {
+      setSupabaseStatus(dataService.getSupabaseStatus());
+    }, 2000);
 
     return unsubscribe;
   }, []);
@@ -137,6 +145,28 @@ const TreasuryDashboard = () => {
     }
   };
 
+  const handleSupabaseRebuild = async () => {
+    if (window.confirm('¿Migrar y reconstruir datos en Supabase?\n\nEsto creará una base de datos persistente en la nube con todos los datos de alumnos.csv.\n\n✅ Los cambios se guardarán automáticamente\n✅ Acceso desde cualquier dispositivo\n✅ Backup automático en la nube\n\n¿Continuar?')) {
+      setIsRebuilding(true);
+      try {
+        const result = await dataService.rebuildSupabaseFromAlumnos();
+        if (result.success) {
+          alert(`🎉 ¡Base de datos Supabase configurada exitosamente!\n\n✅ ${result.studentsCount} estudiantes migrados\n✅ Persistencia automática activada\n✅ Datos seguros en la nube\n\nTodos los cambios se guardarán automáticamente a partir de ahora.`);
+          const students = await dataService.getAllStudents();
+          setAllStudents(Array.isArray(students) ? students : []);
+          setSupabaseStatus(dataService.getSupabaseStatus());
+        } else {
+          alert(`Error configurando Supabase: ${result.error}\n\nVerifica que hayas configurado las variables de entorno en el archivo .env`);
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}\n\nAsegúrate de haber configurado Supabase correctamente.`);
+        console.error('Error configuring Supabase:', error);
+      } finally {
+        setIsRebuilding(false);
+      }
+    }
+  };
+
   return (
     <div>
       <div className="header">
@@ -194,6 +224,32 @@ const TreasuryDashboard = () => {
           >
             {isRebuilding ? '🔄 Reconstruyendo...' : '🔄 Reconstruir desde CSV'}
           </button>
+          {supabaseStatus.status === 'connected' && (
+            <button 
+              className="btn"
+              onClick={handleSupabaseRebuild}
+              disabled={isRebuilding}
+              style={{
+                background: isRebuilding ? '#9ca3af' : '#059669',
+                borderColor: isRebuilding ? '#9ca3af' : '#059669',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+            >
+              {isRebuilding ? '☁️ Migrando...' : '☁️ Migrar a Supabase'}
+            </button>
+          )}
+          <div style={{ 
+            fontSize: '0.85rem', 
+            color: supabaseStatus.status === 'connected' ? '#059669' : '#dc2626',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            {supabaseStatus.message}
+            {supabaseStatus.isActive && <span style={{ color: '#059669' }}>📡 ACTIVO</span>}
+          </div>
         </div>
 
         {activeView === 'courses' ? (

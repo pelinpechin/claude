@@ -11,11 +11,51 @@ import {
   schoolConfig
 } from '../data/realDatabase.js';
 import { csvService } from './csvService.js';
+import { supabaseService } from './supabaseService.js';
 
 class DataService {
   constructor() {
     this.listeners = [];
     this.lastUpdate = new Date();
+    this.useSupabase = false; // Modo híbrido: false = local, true = Supabase
+    this.supabaseStatus = 'disconnected';
+    this.initializeSupabase();
+  }
+
+  // Inicializar conexión con Supabase
+  async initializeSupabase() {
+    try {
+      const isConnected = await supabaseService.checkConnection();
+      if (isConnected) {
+        this.supabaseStatus = 'connected';
+        console.log('✅ Supabase conectado correctamente');
+        
+        // En el futuro, se puede habilitar automáticamente
+        // this.useSupabase = true;
+      } else {
+        this.supabaseStatus = 'error';
+        console.log('⚠️ Supabase no disponible, usando datos locales');
+      }
+    } catch (error) {
+      this.supabaseStatus = 'error';
+      console.log('⚠️ Error conectando con Supabase:', error.message);
+    }
+  }
+
+  // Alternar entre modo local y Supabase
+  async enableSupabaseMode(enable = true) {
+    if (enable && this.supabaseStatus !== 'connected') {
+      throw new Error('Supabase no está conectado. Revisa la configuración.');
+    }
+    
+    this.useSupabase = enable;
+    console.log(`🔄 Modo ${enable ? 'Supabase' : 'local'} activado`);
+    
+    this.notify({
+      type: 'MODE_CHANGED',
+      mode: enable ? 'supabase' : 'local',
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Suscribirse a cambios en los datos
@@ -32,8 +72,16 @@ class DataService {
     this.listeners.forEach(listener => listener(change));
   }
 
-  // Obtener todos los estudiantes
-  getAllStudents() {
+  // Obtener todos los estudiantes (modo híbrido)
+  async getAllStudents() {
+    if (this.useSupabase) {
+      try {
+        return await supabaseService.getAllStudents();
+      } catch (error) {
+        console.error('Error en Supabase, fallback a datos locales:', error);
+        return getAllStudents();
+      }
+    }
     return getAllStudents();
   }
 
@@ -52,14 +100,30 @@ class DataService {
     return getGradeStats(grade);
   }
 
-  // Registrar nuevo pago
-  recordPayment(studentId, paymentData) {
-    const success = updatePaymentStatus(studentId, paymentData);
+  // Registrar nuevo pago (modo híbrido)
+  async recordPayment(studentId, paymentData) {
+    let success = false;
+    
+    if (this.useSupabase) {
+      try {
+        await supabaseService.recordPayment(studentId, paymentData);
+        success = true;
+        console.log('💾 Pago guardado en Supabase');
+      } catch (error) {
+        console.error('Error guardando en Supabase, usando local:', error);
+      }
+    }
+    
+    // Siempre actualizar también localmente (como backup)
+    const localSuccess = updatePaymentStatus(studentId, paymentData);
+    success = success || localSuccess;
+    
     if (success) {
       this.notify({
         type: 'PAYMENT_RECORDED',
         studentId,
         payment: paymentData,
+        savedTo: this.useSupabase ? 'supabase' : 'local',
         timestamp: new Date().toISOString()
       });
     }
@@ -431,6 +495,72 @@ class DataService {
       console.error('Error reconstruyendo la base de datos:', error);
       return { success: false, error: error.message };
     }
+  }
+
+  // Reconstruir en Supabase desde alumnos.csv
+  async rebuildSupabaseFromAlumnos() {
+    try {
+      if (this.supabaseStatus !== 'connected') {
+        throw new Error('Supabase no está conectado. Configura las variables de entorno primero.');
+      }
+
+      console.log('🔄 Iniciando reconstrucción en Supabase desde alumnos.csv...');
+      
+      // Cargar y procesar datos desde alumnos.csv
+      const csvStudents = await csvService.loadAlumnosCSV();
+      
+      if (csvStudents.length === 0) {
+        throw new Error('No se encontraron estudiantes en alumnos.csv');
+      }
+      
+      // Importar masivamente a Supabase
+      await supabaseService.importStudentsBulk(csvStudents);
+      
+      // También actualizar datos locales
+      const studentsByGrade = {};
+      csvStudents.forEach(student => {
+        if (!studentsByGrade[student.grade]) {
+          studentsByGrade[student.grade] = [];
+        }
+        studentsByGrade[student.grade].push(student);
+      });
+      
+      const { rebuildFromAlumnosCSV } = await import('../data/realDatabase.js');
+      rebuildFromAlumnosCSV(studentsByGrade);
+      
+      // Activar modo Supabase después de importar
+      await this.enableSupabaseMode(true);
+      
+      this.notify({
+        type: 'SUPABASE_REBUILD_COMPLETED',
+        studentsCount: csvStudents.length,
+        mode: 'supabase',
+        timestamp: new Date().toISOString()
+      });
+      
+      return {
+        success: true,
+        studentsCount: csvStudents.length,
+        message: 'Datos reconstruidos en Supabase exitosamente'
+      };
+      
+    } catch (error) {
+      console.error('Error reconstruyendo en Supabase:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Obtener estado de conexión con Supabase
+  getSupabaseStatus() {
+    return {
+      status: this.supabaseStatus,
+      isActive: this.useSupabase,
+      message: this.supabaseStatus === 'connected' 
+        ? '✅ Supabase conectado' 
+        : this.supabaseStatus === 'error'
+        ? '❌ Error en Supabase'
+        : '⏳ Conectando...'
+    };
   }
 }
 
