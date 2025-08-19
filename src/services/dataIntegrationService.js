@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js';
+import { csvDataService } from './csvDataService.js';
 
 /**
  * Servicio que integra datos de múltiples fuentes
@@ -77,10 +78,21 @@ export class DataIntegrationService {
   // Cargar datos desde CSV local (fallback)
   async loadFromCSV() {
     try {
-      // Simular carga desde el CSV corregido
-      const csvData = await this.parseCSVData();
-      this.students = csvData.students;
-      this.payments = csvData.payments;
+      await csvDataService.loadData();
+      this.students = csvDataService.getStudents();
+      this.payments = [];
+      
+      // Extraer todos los pagos de los estudiantes
+      this.students.forEach(student => {
+        if (student.paymentHistory) {
+          student.paymentHistory.forEach(payment => {
+            this.payments.push({
+              ...payment,
+              student_rut: student.rut
+            });
+          });
+        }
+      });
       
       console.log(`✅ Cargados ${this.students.length} estudiantes desde CSV local`);
     } catch (error) {
@@ -170,15 +182,9 @@ export class DataIntegrationService {
     });
   }
 
-  // Parser CSV como fallback
-  async parseCSVData() {
-    // Esta función parsearia el CSV si Supabase no está disponible
-    // Por ahora retorna datos vacíos, pero se podría implementar
-    // la lógica de parsing del CSV original
-    return {
-      students: [],
-      payments: []
-    };
+  // Verificar si los datos están disponibles
+  hasData() {
+    return this.students && this.students.length > 0;
   }
 
   // Generar datos auxiliares
@@ -250,49 +256,55 @@ export class DataIntegrationService {
         return { success: false, error: error.message };
       }
     } else {
-      // Modo local - solo actualizar memoria
-      const newPayment = {
-        id: Date.now(),
-        student_rut: paymentData.studentRut,
-        numero_cuota: paymentData.installmentNumber,
-        monto: parseInt(paymentData.amount),
-        fecha_pago: paymentData.date,
-        concepto: paymentData.concept,
-        metodo_pago: paymentData.method || 'Efectivo'
-      };
+      // Modo local - usar el servicio CSV
+      const result = csvDataService.addPayment(paymentData.studentRut, {
+        amount: paymentData.amount,
+        date: paymentData.date,
+        concept: paymentData.concept,
+        method: paymentData.method,
+        installmentNumber: paymentData.installmentNumber
+      });
 
-      this.payments.push(newPayment);
-      this.enrichStudentsWithPayments();
-      return { success: true, payment: newPayment };
+      if (result.success) {
+        // Actualizar datos locales
+        this.students = csvDataService.getStudents();
+      }
+
+      return result;
     }
   }
 
   // Estadísticas
   getStatistics() {
-    const totalStudents = this.students.length;
-    const totalCollected = this.students.reduce(
-      (sum, student) => sum + student.totalPaid, 0
-    );
-    const totalPending = this.students.reduce(
-      (sum, student) => sum + student.pendingAmount, 0
-    );
-    
-    const studentsUpToDate = this.students.filter(s => s.status === 'paid').length;
-    const studentsPending = this.students.filter(s => s.status === 'pending').length;
-    const studentsOverdue = this.students.filter(s => s.status === 'overdue').length;
-    const studentsWithScholarship = this.students.filter(s => s.status === 'scholarship').length;
+    if (this.isSupabaseConnected) {
+      const totalStudents = this.students.length;
+      const totalCollected = this.students.reduce(
+        (sum, student) => sum + student.totalPaid, 0
+      );
+      const totalPending = this.students.reduce(
+        (sum, student) => sum + student.pendingAmount, 0
+      );
+      
+      const studentsUpToDate = this.students.filter(s => s.status === 'paid').length;
+      const studentsPending = this.students.filter(s => s.status === 'pending').length;
+      const studentsOverdue = this.students.filter(s => s.status === 'overdue').length;
+      const studentsWithScholarship = this.students.filter(s => s.status === 'scholarship').length;
 
-    return {
-      totalStudents,
-      totalCollected,
-      totalPending,
-      studentsUpToDate,
-      studentsPending,
-      studentsOverdue,
-      studentsWithScholarship,
-      dataSource: this.dataSource,
-      isSupabaseConnected: this.isSupabaseConnected
-    };
+      return {
+        totalStudents,
+        totalCollected,
+        totalPending,
+        studentsUpToDate,
+        studentsPending,
+        studentsOverdue,
+        studentsWithScholarship,
+        dataSource: this.dataSource,
+        isSupabaseConnected: this.isSupabaseConnected
+      };
+    } else {
+      // Usar estadísticas del servicio CSV
+      return csvDataService.getStatistics();
+    }
   }
 }
 
