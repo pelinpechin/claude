@@ -12,40 +12,45 @@ export const schoolConfig = {
   lastUpdate: new Date().toISOString()
 };
 
-// Estructura de cursos por nivel
+// Estructura de cursos reales basada en alumnos.csv
 export const courseStructure = {
-  "Parvulos": {
-    "Pre-Kinder": { capacity: 25, monthlyFee: 85000 },
-    "Kinder A": { capacity: 30, monthlyFee: 95000 },
-    "Kinder B": { capacity: 30, monthlyFee: 95000 }
+  "Parvularia": {
+    "NT1 A": { capacity: 25, monthlyFee: 85000, level: "Parvularia" },
+    "NT1 B": { capacity: 25, monthlyFee: 85000, level: "Parvularia" },
+    "NT2 A": { capacity: 30, monthlyFee: 95000, level: "Parvularia" },
+    "NT2 B": { capacity: 30, monthlyFee: 95000, level: "Parvularia" }
   },
   "Básica": {
-    "1° Básico A": { capacity: 35, monthlyFee: 110000 },
-    "1° Básico B": { capacity: 35, monthlyFee: 110000 },
-    "2° Básico A": { capacity: 35, monthlyFee: 110000 },
-    "2° Básico B": { capacity: 35, monthlyFee: 110000 },
-    "3° Básico A": { capacity: 35, monthlyFee: 115000 },
-    "3° Básico B": { capacity: 35, monthlyFee: 115000 },
-    "4° Básico A": { capacity: 35, monthlyFee: 115000 },
-    "4° Básico B": { capacity: 35, monthlyFee: 115000 },
-    "5° Básico A": { capacity: 35, monthlyFee: 120000 },
-    "5° Básico B": { capacity: 35, monthlyFee: 120000 },
-    "6° Básico A": { capacity: 35, monthlyFee: 120000 },
-    "6° Básico B": { capacity: 35, monthlyFee: 120000 },
-    "7° Básico A": { capacity: 35, monthlyFee: 125000 },
-    "7° Básico B": { capacity: 35, monthlyFee: 125000 },
-    "8° Básico A": { capacity: 35, monthlyFee: 125000 },
-    "8° Básico B": { capacity: 35, monthlyFee: 125000 }
+    "1° BÁSICO A": { capacity: 35, monthlyFee: 110000, level: "Básica" },
+    "1° BÁSICO B": { capacity: 35, monthlyFee: 110000, level: "Básica" },
+    "2° BÁSICO A": { capacity: 35, monthlyFee: 110000, level: "Básica" },
+    "2° BÁSICO B": { capacity: 35, monthlyFee: 110000, level: "Básica" },
+    "3° BÁSICO A": { capacity: 35, monthlyFee: 115000, level: "Básica" },
+    "3° BÁSICO B": { capacity: 35, monthlyFee: 115000, level: "Básica" },
+    "4° BÁSICO A": { capacity: 35, monthlyFee: 115000, level: "Básica" },
+    "4° BÁSICO B": { capacity: 35, monthlyFee: 115000, level: "Básica" },
+    "5° BÁSICO A": { capacity: 35, monthlyFee: 120000, level: "Básica" },
+    "5° BÁSICO B": { capacity: 35, monthlyFee: 120000, level: "Básica" },
+    "6° BÁSICO A": { capacity: 35, monthlyFee: 120000, level: "Básica" },
+    "6° BÁSICO B": { capacity: 35, monthlyFee: 120000, level: "Básica" },
+    "7° BÁSICO A": { capacity: 35, monthlyFee: 125000, level: "Básica" },
+    "7° BÁSICO B": { capacity: 35, monthlyFee: 125000, level: "Básica" },
+    "8° BÁSICO A": { capacity: 35, monthlyFee: 125000, level: "Básica" },
+    "8° BÁSICO B": { capacity: 35, monthlyFee: 125000, level: "Básica" }
   },
   "Media": {
-    "1° Medio A": { capacity: 40, monthlyFee: 145000 },
-    "1° Medio B": { capacity: 40, monthlyFee: 145000 },
-    "2° Medio A": { capacity: 40, monthlyFee: 150000 },
-    "2° Medio B": { capacity: 40, monthlyFee: 150000 },
-    "3° Medio A": { capacity: 40, monthlyFee: 155000 },
-    "3° Medio B": { capacity: 40, monthlyFee: 155000 },
-    "4° Medio A": { capacity: 40, monthlyFee: 160000 },
-    "4° Medio B": { capacity: 40, monthlyFee: 160000 }
+    "1° MEDIO A": { capacity: 40, monthlyFee: 145000, level: "Media" },
+    "1° MEDIO B": { capacity: 40, monthlyFee: 145000, level: "Media" },
+    "1° MEDIO C": { capacity: 40, monthlyFee: 145000, level: "Media" },
+    "2° MEDIO A": { capacity: 40, monthlyFee: 150000, level: "Media" },
+    "2° MEDIO B": { capacity: 40, monthlyFee: 150000, level: "Media" },
+    "2° MEDIO C": { capacity: 40, monthlyFee: 150000, level: "Media" },
+    "3° MEDIO A": { capacity: 40, monthlyFee: 155000, level: "Media" },
+    "3° MEDIO B": { capacity: 40, monthlyFee: 155000, level: "Media" },
+    "3° MEDIO C": { capacity: 40, monthlyFee: 155000, level: "Media" },
+    "4° MEDIO A": { capacity: 40, monthlyFee: 160000, level: "Media" },
+    "4° MEDIO B": { capacity: 40, monthlyFee: 160000, level: "Media" },
+    "4° MEDIO C": { capacity: 40, monthlyFee: 160000, level: "Media" }
   }
 };
 
@@ -29055,11 +29060,61 @@ export const studentsByGrade = {
   ]
 };
 
-// Función para obtener todos los cursos disponibles  
+// Obtener cursos dinámicamente basado en estudiantes reales con acentos y símbolos correctos
 export const getAllCourses = () => {
-  return Object.keys(courseStructure).reduce((courses, level) => {
-    return courses.concat(Object.keys(courseStructure[level]));
-  }, []);
+  const coursesWithStudents = Object.keys(studentsByGrade).filter(grade => 
+    studentsByGrade[grade] && studentsByGrade[grade].length > 0
+  );
+  
+  // Ordenar cursos por nivel y nombre con símbolos correctos
+  return coursesWithStudents.sort((a, b) => {
+    // Orden: Parvularia (NT) → Básica (1°-8°) → Media (1°-4°)
+    const getLevel = (course) => {
+      if (course.includes('NT')) return 0; // Parvularia
+      if (course.includes('BÁSICO')) return 1; // Básica  
+      if (course.includes('MEDIO')) return 2; // Media
+      return 3;
+    };
+    
+    const getNumber = (course) => {
+      const match = course.match(/(\d+)°/);
+      return match ? parseInt(match[1]) : 0;
+    };
+    
+    const levelA = getLevel(a);
+    const levelB = getLevel(b);
+    
+    if (levelA !== levelB) return levelA - levelB;
+    
+    const numA = getNumber(a);
+    const numB = getNumber(b);
+    
+    if (numA !== numB) return numA - numB;
+    
+    return a.localeCompare(b); // Por último, orden alfabético
+  });
+};
+
+// Obtener cursos agrupados por nivel con nombres correctos en español
+export const getCoursesByLevel = () => {
+  const allCourses = getAllCourses();
+  const grouped = {
+    'Parvularia': [],
+    'Básica': [], 
+    'Media': []
+  };
+  
+  allCourses.forEach(course => {
+    if (course.includes('NT')) {
+      grouped.Parvularia.push(course);
+    } else if (course.includes('BÁSICO')) {
+      grouped.Básica.push(course);
+    } else if (course.includes('MEDIO')) {
+      grouped.Media.push(course);
+    }
+  });
+  
+  return grouped;
 };
 
 // Función para obtener todos los estudiantes en formato plano

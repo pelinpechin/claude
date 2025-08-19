@@ -7,6 +7,7 @@ import DataUpdater from '../../components/Treasury/DataUpdater';
 import StudentProfile from '../../components/Treasury/StudentProfile';
 import ScholarshipView from '../../components/Treasury/ScholarshipView';
 import { dataService } from '../../services/dataService';
+import { getCoursesByLevel } from '../../data/realDatabase';
 import { exportToCSV } from '../../utils/formatters';
 
 const TreasuryDashboard = () => {
@@ -20,6 +21,7 @@ const TreasuryDashboard = () => {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'courses' | 'scholarships'
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
+  const [coursesByLevel, setCoursesByLevel] = useState({ Parvularia: [], Básica: [], Media: [] });
   const [isRebuilding, setIsRebuilding] = useState(false);
   const [supabaseStatus, setSupabaseStatus] = useState({ status: 'disconnected', isActive: false });
 
@@ -36,6 +38,7 @@ const TreasuryDashboard = () => {
       // Cargar datos iniciales
       setAllStudents(dataService.getAllStudents());
       setAllCourses(dataService.getAllCourses());
+      setCoursesByLevel(getCoursesByLevel());
     };
 
     loadInitialData();
@@ -45,6 +48,7 @@ const TreasuryDashboard = () => {
       const students = dataService.getAllStudents();
       setAllStudents(Array.isArray(students) ? students : []);
       setAllCourses(dataService.getAllCourses());
+      setCoursesByLevel(getCoursesByLevel());
       setSupabaseStatus(dataService.getSupabaseStatus());
     });
 
@@ -133,6 +137,7 @@ const TreasuryDashboard = () => {
           // Actualizar el estado local
           setAllStudents(dataService.getAllStudents());
           setAllCourses(dataService.getAllCourses());
+          setCoursesByLevel(getCoursesByLevel());
         } else {
           alert(`Error reconstruyendo la base de datos: ${result.error}`);
         }
@@ -154,6 +159,8 @@ const TreasuryDashboard = () => {
           alert(`🎉 ¡Base de datos Supabase configurada exitosamente!\n\n✅ ${result.studentsCount} estudiantes migrados\n✅ Persistencia automática activada\n✅ Datos seguros en la nube\n\nTodos los cambios se guardarán automáticamente a partir de ahora.`);
           const students = dataService.getAllStudents();
           setAllStudents(Array.isArray(students) ? students : []);
+          setAllCourses(dataService.getAllCourses());
+          setCoursesByLevel(getCoursesByLevel());
           setSupabaseStatus(dataService.getSupabaseStatus());
         } else {
           alert(`Error configurando Supabase: ${result.error}\n\nVerifica que hayas configurado las variables de entorno en el archivo .env`);
@@ -299,9 +306,33 @@ const TreasuryDashboard = () => {
               onChange={(e) => setSelectedGrade(e.target.value)}
             >
               <option value="">Todos los cursos</option>
-              {allCourses.map(grade => (
-                <option key={grade} value={grade}>{grade}</option>
-              ))}
+              
+              {/* Parvularia */}
+              {coursesByLevel.Parvularia.length > 0 && (
+                <optgroup label="🎈 Parvularia">
+                  {coursesByLevel.Parvularia.map(course => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Básica */}
+              {coursesByLevel.Básica.length > 0 && (
+                <optgroup label="📚 Educación Básica">
+                  {coursesByLevel.Básica.map(course => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Media */}
+              {coursesByLevel.Media.length > 0 && (
+                <optgroup label="🎓 Educación Media">
+                  {coursesByLevel.Media.map(course => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
 
             <select
