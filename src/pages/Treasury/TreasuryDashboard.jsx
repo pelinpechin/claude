@@ -41,8 +41,8 @@ const TreasuryDashboard = () => {
     loadInitialData();
 
     // Suscribirse a cambios
-    const unsubscribe = dataService.subscribe(async () => {
-      const students = await dataService.getAllStudents();
+    const unsubscribe = dataService.subscribe(() => {
+      const students = dataService.getAllStudents();
       setAllStudents(Array.isArray(students) ? students : []);
       setAllCourses(dataService.getAllCourses());
       setSupabaseStatus(dataService.getSupabaseStatus());
@@ -152,7 +152,7 @@ const TreasuryDashboard = () => {
         const result = await dataService.rebuildSupabaseFromAlumnos();
         if (result.success) {
           alert(`🎉 ¡Base de datos Supabase configurada exitosamente!\n\n✅ ${result.studentsCount} estudiantes migrados\n✅ Persistencia automática activada\n✅ Datos seguros en la nube\n\nTodos los cambios se guardarán automáticamente a partir de ahora.`);
-          const students = await dataService.getAllStudents();
+          const students = dataService.getAllStudents();
           setAllStudents(Array.isArray(students) ? students : []);
           setSupabaseStatus(dataService.getSupabaseStatus());
         } else {

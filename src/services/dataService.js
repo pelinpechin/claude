@@ -72,16 +72,10 @@ class DataService {
     this.listeners.forEach(listener => listener(change));
   }
 
-  // Obtener todos los estudiantes (modo híbrido)
-  async getAllStudents() {
-    if (this.useSupabase) {
-      try {
-        return await supabaseService.getAllStudents();
-      } catch (error) {
-        console.error('Error en Supabase, fallback a datos locales:', error);
-        return getAllStudents();
-      }
-    }
+  // Obtener todos los estudiantes
+  getAllStudents() {
+    // Por ahora usar siempre datos locales para evitar problemas de async
+    // TODO: Implementar sync de Supabase en background más tarde
     return getAllStudents();
   }
 
