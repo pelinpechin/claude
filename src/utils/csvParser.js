@@ -3,7 +3,33 @@ function normalizeText(text) {
   if (!text || typeof text !== 'string') return text;
   
   return text
-    // Eliminar caracteres problemáticos de encoding primero
+    // Arreglar patrones específicos de corrupción de encoding del CSV
+    .replace(/GONZ�LEZ/g, 'GONZALEZ')
+    .replace(/HERN�N/g, 'HERNAN') 
+    .replace(/�LEZ/g, 'ALEZ')  // Para casos como GONZ�LEZ
+    .replace(/�N/g, 'AN')      // Para casos como HERN�N
+    .replace(/C�RDENAS/g, 'CARDENAS')
+    .replace(/D�AZ/g, 'DIAZ')
+    .replace(/ANAH�/g, 'ANAHI')
+    .replace(/HUENCHUM�N/g, 'HUENCHUMAN')
+    .replace(/ANDR�S/g, 'ANDRES')
+    .replace(/G�MEZ/g, 'GOMEZ')
+    .replace(/TUBI�EZ/g, 'TUBIEZ')
+    .replace(/JES�S/g, 'JESUS')
+    .replace(/NICOL�S/g, 'NICOLAS')
+    .replace(/OYARZ�N/g, 'OYARZUN')
+    .replace(/VEL�SQUEZ/g, 'VELASQUEZ')
+    .replace(/BARR�A/g, 'BARRIA')
+    .replace(/MU�OZ/g, 'MUNOZ')
+    .replace(/AGUST�N/g, 'AGUSTIN')
+    .replace(/V�SQUEZ/g, 'VASQUEZ')
+    .replace(/BEL�N/g, 'BELEN')
+    .replace(/SOF�A/g, 'SOFIA')
+    .replace(/�LVAREZ/g, 'ALVAREZ')
+    .replace(/LE�N/g, 'LEON')
+    .replace(/LEUQU�N/g, 'LEUQUEN')
+    .replace(/G�LVEZ/g, 'GALVEZ')
+    // Eliminar cualquier � restante
     .replace(/[�]/g, '')
     // Reemplazar caracteres con acentos por versiones básicas
     .replace(/[áàäâÁÀÄÂ]/g, 'a')
