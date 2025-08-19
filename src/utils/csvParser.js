@@ -3,16 +3,17 @@ function normalizeText(text) {
   if (!text || typeof text !== 'string') return text;
   
   return text
-    // Reemplazar caracteres con acentos por versiones básicas
-    .replace(/[áàäâ]/gi, 'a')
-    .replace(/[éèëê]/gi, 'e')
-    .replace(/[íìïî]/gi, 'i')
-    .replace(/[óòöô]/gi, 'o')
-    .replace(/[úùüû]/gi, 'u')
-    .replace(/[ñ]/gi, 'n')
-    .replace(/[ç]/gi, 'c')
-    // Eliminar caracteres problemáticos de encoding
+    // Eliminar caracteres problemáticos de encoding primero
     .replace(/[�]/g, '')
+    // Reemplazar caracteres con acentos por versiones básicas
+    .replace(/[áàäâÁÀÄÂ]/g, 'a')
+    .replace(/[éèëêÉÈËÊ]/g, 'e')
+    .replace(/[íìïîÍÌÏÎ]/g, 'i')
+    .replace(/[óòöôÓÒÖÔ]/g, 'o')
+    .replace(/[úùüûÚÙÜÛ]/g, 'u')
+    .replace(/[ñÑ]/g, 'n')
+    .replace(/[çÇ]/g, 'c')
+    // Solo mantener letras, números, espacios, guiones y apostrofes
     .replace(/[^\w\s'-]/g, '')
     .trim();
 }
