@@ -6,6 +6,7 @@ function normalizeText(text) {
     // Arreglar patrones específicos de corrupción de encoding del CSV
     .replace(/GONZ�LEZ/g, 'GONZALEZ')
     .replace(/HERN�N/g, 'HERNAN') 
+    .replace(/C�RCAMO/g, 'CARCAMO')
     .replace(/�LEZ/g, 'ALEZ')  // Para casos como GONZ�LEZ
     .replace(/�N/g, 'AN')      // Para casos como HERN�N
     .replace(/C�RDENAS/g, 'CARDENAS')
