@@ -1,3 +1,48 @@
+// Función para normalizar caracteres especiales y evitar problemas de encoding
+function normalizeText(text) {
+  if (!text || typeof text !== 'string') return text;
+  
+  return text
+    // Reemplazar caracteres con acentos por versiones básicas
+    .replace(/[áàäâ]/gi, 'a')
+    .replace(/[éèëê]/gi, 'e')
+    .replace(/[íìïî]/gi, 'i')
+    .replace(/[óòöô]/gi, 'o')
+    .replace(/[úùüû]/gi, 'u')
+    .replace(/[ñ]/gi, 'n')
+    .replace(/[ç]/gi, 'c')
+    // Eliminar caracteres problemáticos de encoding
+    .replace(/[�]/g, '')
+    .replace(/[^\w\s'-]/g, '')
+    .trim();
+}
+
+// Función para capitalizar nombres correctamente sin acentos
+function capitalizeName(name) {
+  if (!name || typeof name !== 'string') return name;
+  
+  // Primero normalizar para evitar problemas de encoding
+  const normalized = normalizeText(name);
+  
+  return normalized
+    .toLowerCase()
+    .split(' ')
+    .map(word => {
+      if (word.length <= 1) return word.toUpperCase();
+      
+      // Preposiciones y artículos que van en minúscula (excepto al inicio)
+      const lowercase = ['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'o', 'u'];
+      
+      // Si es una preposición/artículo, mantener minúscula
+      if (lowercase.includes(word)) return word;
+      
+      // Capitalizar primera letra de cada palabra
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ')
+    .trim();
+}
+
 // Función para procesar archivo alumnos.csv con estructura simplificada
 export function parseAlumnosCSV(csvContent) {
   const lines = csvContent.split('\n');
@@ -23,8 +68,8 @@ export function parseAlumnosCSV(csvContent) {
     const columns = line.split(';');
     if (columns.length < 6) continue;
     
-    // Extraer datos básicos
-    const nombre = columns[0]?.trim();
+    // Extraer datos básicos y capitalizar nombres
+    const nombre = capitalizeName(columns[0]?.trim());
     const rut = columns[1]?.trim();
     let curso = columns[2]?.trim();
     const arancelStr = columns[3]?.trim();
@@ -34,16 +79,30 @@ export function parseAlumnosCSV(csvContent) {
     // Corregir símbolos y caracteres especiales en el curso
     if (curso) {
       curso = curso
-        .replace(/(\d)\?/g, '$1°') // Reemplazar ? por °
-        .replace(/BASICO/gi, 'BÁSICO') // Corregir BASICO a BÁSICO
-        .replace(/1\? /g, '1° ')
-        .replace(/2\? /g, '2° ')
-        .replace(/3\? /g, '3° ')
-        .replace(/4\? /g, '4° ')
-        .replace(/5\? /g, '5° ')
-        .replace(/6\? /g, '6° ')
-        .replace(/7\? /g, '7° ')
-        .replace(/8\? /g, '8° ');
+        // Primero corregir los símbolos de grado (? por °)
+        .replace(/1\?/g, '1°')
+        .replace(/2\?/g, '2°') 
+        .replace(/3\?/g, '3°')
+        .replace(/4\?/g, '4°')
+        .replace(/5\?/g, '5°')
+        .replace(/6\?/g, '6°')
+        .replace(/7\?/g, '7°')
+        .replace(/8\?/g, '8°')
+        // Normalizar BASICO (sin acentos para evitar problemas de encoding)
+        .replace(/BASICO/gi, 'BASICO')
+        .replace(/B[�Á]SICO/gi, 'BASICO')
+        .replace(/BÁSICO/gi, 'BASICO')
+        // Normalizar otras palabras (sin acentos)
+        .replace(/EDUCACION/gi, 'EDUCACION')
+        .replace(/EDUCACIÓN/gi, 'EDUCACION')
+        .replace(/PARVULARIA/gi, 'PARVULARIA') // ya está correcto
+        // También manejar otros caracteres problemáticos
+        .replace(/(\d)[�]/g, '$1°')
+        .replace(/(\d) \?/g, '$1°')
+        // Limpiar espacios extra y caracteres residuales
+        .replace(/[�]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
     
     // Skip if essential data is missing
@@ -89,10 +148,10 @@ export function parseAlumnosCSV(csvContent) {
     
     // Generar datos del apoderado basados en el nombre del estudiante
     const nameParts = nombre.split(' ');
-    const apellido1 = nameParts[0] || 'Pérez';
-    const apellido2 = nameParts[1] || 'González';
+    const apellido1 = capitalizeName(nameParts[0] || 'Pérez');
+    const apellido2 = capitalizeName(nameParts[1] || 'González');
     
-    const guardianNames = ['Carlos', 'María', 'Luis', 'Carmen', 'Miguel', 'Rosa', 'Juan', 'Ana'];
+    const guardianNames = ['Carlos', 'María', 'Luis', 'Carmen', 'Miguel', 'Rosa', 'Juan', 'Ana', 'Patricia', 'Francisco', 'Claudia', 'Roberto'];
     const guardianName = guardianNames[Math.floor(Math.random() * guardianNames.length)];
     const apoderadoCompleto = `${guardianName} ${apellido1} ${apellido2}`;
     
@@ -102,7 +161,13 @@ export function parseAlumnosCSV(csvContent) {
       rut: normalizedRut === '0' ? 'Sin RUT' : rut,
       guardianName: apoderadoCompleto,
       guardianPhone: '+56 9 0000 0000',
-      guardianEmail: `${guardianName.toLowerCase()}${apellido1.toLowerCase()}@email.com`,
+      guardianEmail: `${guardianName.toLowerCase().replace(/[áéíóúñ]/g, (match) => {
+        const replacements = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n'};
+        return replacements[match] || match;
+      })}${apellido1.toLowerCase().replace(/[áéíóúñ]/g, (match) => {
+        const replacements = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n'};
+        return replacements[match] || match;
+      })}@email.com`,
       grade: curso,
       monthlyFee: cuotaMensual,
       status: status,
