@@ -109,7 +109,6 @@ const PaymentStatus = ({ student, onViewHistory, onUpdatePayment, onDeleteStuden
           </div>
         )}
       </td>
-      <td>{new Date(student.dueDate).toLocaleDateString('es-CL')}</td>
       <td>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button 

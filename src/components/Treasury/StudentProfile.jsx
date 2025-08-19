@@ -195,7 +195,7 @@ const StudentProfile = ({ student, isOpen, onClose }) => {
             <div className="profile-section">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                 <FileText size={20} />
-                Detalle de Cuotas 2024
+                Detalle de Cuotas
               </h3>
               
               <div className="cuotas-table">

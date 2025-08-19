@@ -17,7 +17,6 @@ export const exportToCSV = (data, filename = 'reporte-pagos.csv') => {
     'Estado',
     'Mensualidad',
     'Saldo Pendiente',
-    'Fecha Vencimiento',
     'Último Pago'
   ];
 
@@ -31,7 +30,6 @@ export const exportToCSV = (data, filename = 'reporte-pagos.csv') => {
       student.status === 'pending' ? 'Pendiente' : 'Vencido',
       student.monthlyFee,
       student.balance,
-      student.dueDate,
       student.lastPayment
     ].join(','))
   ].join('\n');

@@ -242,7 +242,6 @@ const TreasuryDashboard = () => {
                   <th>Estado</th>
                   <th>Mensualidad</th>
                   <th>Saldo Pendiente</th>
-                  <th>Vencimiento</th>
                   <th>Acciones</th>
                 </tr>
               </thead>

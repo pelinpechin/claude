@@ -221,7 +221,7 @@ const DataUpdater = ({ student, onClose, onUpdate }) => {
                     borderRadius: '6px',
                     fontSize: '1rem'
                   }}
-                  placeholder="ej: Mensualidad Agosto 2024"
+                  placeholder="ej: Mensualidad Agosto"
                 />
               </div>
 

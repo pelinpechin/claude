@@ -107,7 +107,7 @@ export function parseAlumnosCSV(csvContent) {
       totalPagado: primeraCuotaPagada,
       // Historial de pagos simplificado
       paymentHistory: primeraCuotaPagada > 0 ? [{
-        date: '2024-03-15',
+        date: '2025-03-15',
         amount: primeraCuotaPagada,
         concept: 'Primera cuota',
         method: 'Transferencia'
@@ -275,7 +275,7 @@ export function parseCSVStudentData(csvContent) {
       cuotasPagadas: cuotasPagadas,
       totalPagado: totalPagado,
       paymentHistory: cuotas.filter(c => c.pagado).map((c, index) => ({
-        date: `2024-${(cuotas.indexOf(c) + 3).toString().padStart(2, '0')}-15`,
+        date: `2025-${(cuotas.indexOf(c) + 3).toString().padStart(2, '0')}-15`,
         amount: c.montoPagado,
         concept: `Mensualidad ${c.mes}`,
         method: 'Transferencia'

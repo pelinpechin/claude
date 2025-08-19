@@ -207,7 +207,6 @@ class DataService {
       'Estado',
       'Saldo Pendiente',
       'Último Pago',
-      'Fecha Vencimiento',
       'Método Último Pago'
     ];
 
