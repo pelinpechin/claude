@@ -20,10 +20,13 @@ import {
   BookOpen,
   Bell,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Database,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
-import { dataService } from '../../services/dataService';
-import { supabaseService } from '../../services/supabaseService';
+import { dataIntegrationService } from '../../services/dataIntegrationService';
+import ConfigurationStatus from '../../components/Treasury/ConfigurationStatus';
 
 const ModernTreasuryDashboard = () => {
   const [students, setStudents] = useState([]);
@@ -58,23 +61,13 @@ const ModernTreasuryDashboard = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Intentar cargar desde Supabase primero, si no desde CSV
-      let data = [];
-      try {
-        data = await supabaseService.getStudents();
-        if (data.length === 0) {
-          // Si Supabase está vacío, cargar desde CSV
-          await dataService.loadCSVData();
-          data = dataService.getAllStudents();
-        }
-      } catch {
-        // Si falla Supabase, usar datos locales
-        await dataService.loadCSVData();
-        data = dataService.getAllStudents();
-      }
+      await dataIntegrationService.initialize();
+      const data = dataIntegrationService.getStudents();
       setStudents(data);
+      console.log(`📊 Cargados ${data.length} estudiantes desde ${dataIntegrationService.getDataSource()}`);
     } catch (error) {
       console.error('Error cargando datos:', error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -103,31 +96,7 @@ const ModernTreasuryDashboard = () => {
   };
 
   const stats = useMemo(() => {
-    if (!students.length) return {
-      totalStudents: 0,
-      totalCollected: 0,
-      totalPending: 0,
-      studentsUpToDate: 0,
-      studentsPending: 0,
-      studentsOverdue: 0
-    };
-
-    const totalStudents = students.length;
-    const totalCollected = students.reduce((sum, student) => sum + (student.totalPaid || 0), 0);
-    const totalPending = students.reduce((sum, student) => sum + (student.pendingAmount || 0), 0);
-    
-    const studentsUpToDate = students.filter(s => s.status === 'paid').length;
-    const studentsPending = students.filter(s => s.status === 'pending').length;
-    const studentsOverdue = students.filter(s => s.status === 'overdue').length;
-
-    return {
-      totalStudents,
-      totalCollected,
-      totalPending,
-      studentsUpToDate,
-      studentsPending,
-      studentsOverdue
-    };
+    return dataIntegrationService.getStatistics();
   }, [students]);
 
   const openStudentProfile = (student) => {
@@ -148,18 +117,29 @@ const ModernTreasuryDashboard = () => {
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Aquí implementarías la lógica para guardar el pago
-      // await supabaseService.createPayment(newPayment);
-      console.log('Nuevo pago:', newPayment);
-      setShowPaymentModal(false);
-      setNewPayment({
-        studentRut: '',
-        amount: '',
-        month: '',
-        concept: '',
-        paymentDate: new Date().toISOString().split('T')[0]
+      const result = await dataIntegrationService.recordPayment({
+        studentRut: newPayment.studentRut,
+        amount: newPayment.amount,
+        date: newPayment.paymentDate,
+        concept: newPayment.concept,
+        method: 'Transferencia',
+        installmentNumber: newPayment.month
       });
-      await loadData(); // Recargar datos
+
+      if (result.success) {
+        setShowPaymentModal(false);
+        setNewPayment({
+          studentRut: '',
+          amount: '',
+          month: '',
+          concept: '',
+          paymentDate: new Date().toISOString().split('T')[0]
+        });
+        await loadData(); // Recargar datos
+        alert('✅ Pago registrado exitosamente');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
     } catch (error) {
       console.error('Error creando pago:', error);
       alert('Error al registrar el pago');
@@ -167,21 +147,14 @@ const ModernTreasuryDashboard = () => {
   };
 
   const migrateToSupabase = async () => {
-    if (!window.confirm('¿Migrar todos los datos a Supabase?\n\nEsto creará una base de datos persistente en la nube.')) {
+    const isConnected = dataIntegrationService.isConnectedToSupabase();
+    
+    if (isConnected) {
+      alert('✅ Ya estás conectado a Supabase!\n\nTodos los cambios se guardan automáticamente en la nube.');
       return;
     }
 
-    setMigrationStatus('loading');
-    try {
-      // Aquí usarías el script SQL generado anteriormente
-      setMigrationStatus('success');
-      alert('¡Migración exitosa! Los datos ahora se guardan automáticamente en Supabase.');
-      await loadData();
-    } catch (error) {
-      setMigrationStatus('error');
-      console.error('Error en migración:', error);
-      alert('Error en la migración. Verifica la configuración de Supabase.');
-    }
+    alert('🔧 Para conectar con Supabase:\n\n1. Configura las variables en el archivo .env\n2. VITE_SUPABASE_URL=tu-url\n3. VITE_SUPABASE_ANON_KEY=tu-clave\n4. Reinicia la aplicación\n\n📄 Consulta las instrucciones en los archivos generados.');
   };
 
   const exportToCSV = () => {
@@ -271,24 +244,35 @@ const ModernTreasuryDashboard = () => {
                   ${stats.totalCollected.toLocaleString()}
                 </div>
               </div>
-              <button
-                onClick={migrateToSupabase}
-                disabled={migrationStatus === 'loading'}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
-              >
-                {migrationStatus === 'loading' ? (
-                  <RefreshCw size={18} className="mr-2 animate-spin" />
+              <div className="flex items-center space-x-2">
+                {stats.isSupabaseConnected ? (
+                  <div className="flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-xl">
+                    <Database size={16} className="mr-2" />
+                    <span className="text-sm font-medium">Supabase Activo</span>
+                  </div>
                 ) : (
-                  <Settings size={18} className="mr-2" />
+                  <div className="flex items-center px-3 py-2 bg-orange-100 text-orange-800 rounded-xl">
+                    <FileText size={16} className="mr-2" />
+                    <span className="text-sm font-medium">Modo Local</span>
+                  </div>
                 )}
-                {migrationStatus === 'loading' ? 'Migrando...' : 'Migrar a Supabase'}
-              </button>
+                <button
+                  onClick={migrateToSupabase}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  <Settings size={18} className="mr-2" />
+                  Configurar Supabase
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Estado de configuración */}
+        <ConfigurationStatus stats={stats} />
+
         {/* Tarjetas de estadísticas modernas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
@@ -330,15 +314,36 @@ const ModernTreasuryDashboard = () => {
           <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Por Cobrar</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  ${stats.totalPending.toLocaleString()}
-                </p>
+                <p className="text-sm font-medium text-gray-600">Becas 100%</p>
+                <p className="text-3xl font-bold text-purple-600">{stats.studentsWithScholarship}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <DollarSign size={24} className="text-blue-600" />
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Users size={24} className="text-purple-600" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Tarjeta de resumen financiero */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-2xl shadow-lg mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">${stats.totalCollected.toLocaleString()}</div>
+              <div className="text-blue-200 text-sm">Total Recaudado</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">${stats.totalPending.toLocaleString()}</div>
+              <div className="text-blue-200 text-sm">Por Cobrar</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                ${(stats.totalCollected + stats.totalPending).toLocaleString()}
+              </div>
+              <div className="text-blue-200 text-sm">Total Proyectado</div>
+            </div>
+          </div>
+          <div className="mt-4 text-center text-blue-200 text-sm">
+            Fuente de datos: {stats.isSupabaseConnected ? '☁️ Supabase (En la nube)' : '📄 Local (CSV)'}
           </div>
         </div>
 
@@ -508,9 +513,16 @@ const ModernTreasuryDashboard = () => {
                           <CreditCard size={16} />
                         </button>
                         <button
-                          onClick={() => openStudentProfile(student)}
+                          onClick={() => {
+                            const history = dataIntegrationService.getPaymentHistory(student.rut);
+                            if (history.length === 0) {
+                              alert('Este estudiante no tiene pagos registrados.');
+                            } else {
+                              alert(`Historial de ${student.studentName}:\n\n${history.map(p => `• ${p.concept}: $${p.amount.toLocaleString()} (${p.date})`).join('\n')}`);
+                            }
+                          }}
                           className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
-                          title="Historial de pagos"
+                          title="Ver historial de pagos"
                         >
                           <FileText size={16} />
                         </button>
@@ -573,6 +585,21 @@ const ModernTreasuryDashboard = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mes/Cuota (opcional)
+                  </label>
+                  <select
+                    value={newPayment.month}
+                    onChange={(e) => setNewPayment({...newPayment, month: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Sin especificar</option>
+                    {Array.from({length: 10}, (_, i) => (
+                      <option key={i+1} value={i+1}>Cuota {i+1}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Concepto
                   </label>
                   <select
@@ -582,10 +609,11 @@ const ModernTreasuryDashboard = () => {
                     required
                   >
                     <option value="">Seleccionar concepto</option>
-                    <option value="mensualidad">Mensualidad</option>
-                    <option value="matricula">Matrícula</option>
-                    <option value="cuota_extra">Cuota Extra</option>
-                    <option value="otro">Otro</option>
+                    <option value="Mensualidad">Mensualidad</option>
+                    <option value="Matrícula">Matrícula</option>
+                    <option value="Cuota Extra">Cuota Extra</option>
+                    <option value="Pago Atrasado">Pago Atrasado</option>
+                    <option value="Otro">Otro</option>
                   </select>
                 </div>
                 <div>
@@ -648,6 +676,18 @@ const ModernTreasuryDashboard = () => {
                     <div className="bg-blue-50 p-4 rounded-xl">
                       <p className="text-sm text-gray-600">Curso</p>
                       <p className="font-semibold text-blue-900">{selectedStudent.grade}</p>
+                      <p className="text-sm text-gray-600 mt-2">Arancel Anual</p>
+                      <p className="font-semibold text-blue-900">
+                        ${(selectedStudent.totalAnnualFee || 0).toLocaleString()}
+                      </p>
+                      {selectedStudent.scholarshipAmount > 0 && (
+                        <>
+                          <p className="text-sm text-gray-600 mt-2">Beca</p>
+                          <p className="font-semibold text-purple-900">
+                            ${selectedStudent.scholarshipAmount.toLocaleString()}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                   
@@ -672,11 +712,42 @@ const ModernTreasuryDashboard = () => {
                           ${(selectedStudent.pendingAmount || 0).toLocaleString()}
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mensualidad:</span>
+                        <span className="font-semibold text-blue-600">
+                          ${(selectedStudent.monthlyFee || 0).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Historial de Pagos</h4>
+                    <div className="bg-gray-50 p-4 rounded-xl max-h-40 overflow-y-auto">
+                      {selectedStudent.paymentHistory && selectedStudent.paymentHistory.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedStudent.paymentHistory.slice(0, 5).map((payment, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="text-gray-600">{payment.concept}</span>
+                              <span className="font-semibold text-green-600">
+                                ${payment.amount.toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                          {selectedStudent.paymentHistory.length > 5 && (
+                            <div className="text-xs text-gray-500 text-center pt-2">
+                              +{selectedStudent.paymentHistory.length - 5} pagos más...
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-center text-sm">Sin pagos registrados</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Información del Apoderado</h4>
                     <div className="bg-green-50 p-4 rounded-xl space-y-2">
